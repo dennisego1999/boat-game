@@ -19,7 +19,7 @@ import {
 } from 'three';
 import {getChildren} from "@/assets/js/util/gltfHelpers";
 
-export default class ThreeJsSceneScene {
+export default class ThreeJsScene {
 
     constructor() {
 
@@ -59,6 +59,41 @@ export default class ThreeJsSceneScene {
         this.targetSpeed = {
             velocity: 0,
             rotation: 0,
+        };
+        this.boatMovementController = {
+            'z': {
+                pressed: false,
+                func: () => this.targetSpeed.velocity = 0.1
+            },
+            'ArrowUp': {
+                pressed: false,
+                func: () => this.targetSpeed.velocity = 0.1
+            },
+            's': {
+                pressed: false,
+                func: () => this.targetSpeed.velocity = -0.1
+            },
+            'ArrowDown': {
+                pressed: false,
+                func: () => this.targetSpeed.velocity = -0.1
+            },
+            'q': {
+                pressed: false,
+                func: () => this.targetSpeed.rotation = 0.1
+            },
+            'ArrowLeft': {
+                pressed: false,
+                func: () => this.targetSpeed.rotation = 0.1
+            },
+            'd': {
+                pressed: false,
+                func: () => this.targetSpeed.rotation = -0.1
+            },
+            'ArrowRight': {
+                pressed: false,
+                func: () => this.targetSpeed.rotation = -0.1
+            },
+
         };
 
         //Setup scene
@@ -355,11 +390,6 @@ export default class ThreeJsSceneScene {
         this.boat.translateZ(this.currentSpeed.velocity);
     }
 
-    stopBoat() {
-        this.targetSpeed.velocity = 0;
-        this.targetSpeed.rotation = 0;
-    }
-
     setSun() {
 
         const pmremGenerator = new PMREMGenerator( this.renderer );
@@ -383,35 +413,43 @@ export default class ThreeJsSceneScene {
 
     }
 
-    onKeyUp() {
-        //Stop the boat
-        this.stopBoat();
+    stopBoat(key) {
+
+        if((key === 'z' || key === 's' || key === 'ArrowUp' || key === 'ArrowDown') && !this.boatMovementController[key].pressed) {
+            this.targetSpeed.velocity = 0;
+        }
+
+        if((key === 'q' || key === 'd' || key === 'ArrowLeft' || key === 'ArrowRight') && !this.boatMovementController[key].pressed) {
+            this.targetSpeed.rotation = 0;
+        }
+
+    }
+
+    onKeyUp(event) {
+
+        if(this.boatMovementController[event.key]){
+
+            //Reset specific button
+            this.boatMovementController[event.key].pressed = false;
+
+            //Stop the boat
+            this.stopBoat(event.key);
+
+        }
+
     }
 
     onKeyDown(event) {
 
-        //Add click keys to object
-        const pressedKey = event.key;
-
-        if(pressedKey === 'z' || pressedKey === 'ArrowUp') {
-            //Go forward
-            this.targetSpeed.velocity = 0.1;
+        //Set pressed key state
+        if(this.boatMovementController[event.key]){
+            this.boatMovementController[event.key].pressed = true;
         }
 
-        if(pressedKey === 'q' || pressedKey === 'ArrowLeft') {
-            //Go left
-            this.targetSpeed.rotation = 0.1;
-        }
-
-        if(pressedKey === 'd' || pressedKey === 'ArrowRight') {
-            //Go right
-            this.targetSpeed.rotation = -0.1;
-        }
-
-        if(pressedKey === 's' || pressedKey === 'ArrowDown') {
-            //Go backward
-            this.targetSpeed.velocity = -0.1;
-        }
+        //Call pressed key function
+        Object.keys(this.boatMovementController).forEach(key => {
+            this.boatMovementController[key].pressed && this.boatMovementController[key].func()
+        })
 
     }
 

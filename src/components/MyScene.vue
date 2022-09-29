@@ -10,7 +10,7 @@
 
 <script>
 import {defineComponent, nextTick, onBeforeUnmount} from 'vue';
-import ThreeJsSceneScene from "@/assets/js/classes/ThreeJsScene";
+import ThreeJsScene from "@/assets/js/classes/ThreeJsScene";
 
 export default defineComponent({
     setup() {
@@ -21,12 +21,12 @@ export default defineComponent({
        nextTick(() => {
 
            //Create scene
-           scene = new ThreeJsSceneScene();
+           scene = new ThreeJsScene();
 
            //Add event listeners
            window.addEventListener('resize', () => scene.resizeScene.call(scene));
            window.addEventListener('keydown', (event) => scene.onKeyDown.call(scene, event));
-           window.addEventListener('keyup', () => scene.onKeyUp.call(scene));
+           window.addEventListener('keyup', (event) => scene.onKeyUp.call(scene, event));
 
        });
 
