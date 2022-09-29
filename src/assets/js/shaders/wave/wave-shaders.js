@@ -1,65 +1,54 @@
-<!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title><%= htmlWebpackPlugin.options.title %></title>
+const getWaveVertexShader = () => {
 
-      <script id="vertexShader" type="x-shader/x-vertex">
-            uniform mat4 textureMatrix;
-            uniform float time;
+    return `
+        uniform mat4 textureMatrix
+        uniform float time;
+        uniform vec4 waveA;
+        uniform vec4 waveB;
+        uniform vec4 waveC;
+        
+        varying vec4 mirrorCoord;
+        varying vec4 worldPosition;
+        
+        uniform vec4 waveA;
+        uniform vec4 waveB;
+        uniform vec4 waveC;
+        
+        vec3 GerstnerWave (vec4 wave, vec3 p) {
+            float steepness = wave.z;
+            float wavelength = wave.w;
+            float k = 2.0 * PI / wavelength;
+            float c = sqrt(9.8 / k);
+            vec2 d = normalize(wave.xy);
+            float f = k * (dot(d, p.xy) - c * time);
+            float a = steepness / k;
 
-            varying vec4 mirrorCoord;
-            varying vec4 worldPosition;
+            return vec3(
+            d.x * (a * cos(f)),
+            d.y * (a * cos(f)),
+            a * sin(f)
+            );
+        }
+        
+        void main() {
+            mirrorCoord = modelMatrix * vec4( position, 1.0 );
+            worldPosition = mirrorCoord.xyzw;
+            mirrorCoord = textureMatrix * mirrorCoord;
 
-            #include <common>
-            #include <fog_pars_vertex>
-            #include <shadowmap_pars_vertex>
-            #include <logdepthbuf_pars_vertex>
+            vec3 p = position.xyz;
+            p += GerstnerWave(waveA, position.xyz);
+            p += GerstnerWave(waveB, position.xyz);
+            p += GerstnerWave(waveC, position.xyz);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4( p.x, p.y, p.z, 1.0);
+        }
+        `;
 
-            uniform vec4 waveA;
-            uniform vec4 waveB;
-            uniform vec4 waveC;
+}
 
-            vec3 GerstnerWave (vec4 wave, vec3 p) {
-            	float steepness = wave.z;
-            	float wavelength = wave.w;
-            	float k = 2.0 * PI / wavelength;
-            	float c = sqrt(9.8 / k);
-            	vec2 d = normalize(wave.xy);
-            	float f = k * (dot(d, p.xy) - c * time);
-            	float a = steepness / k;
+const getWaveFragmentShader = () => {
 
-            	return vec3(
-            		d.x * (a * cos(f)),
-            		d.y * (a * cos(f)),
-            		a * sin(f)
-            	);
-            }
-
-            void main() {
-            	mirrorCoord = modelMatrix * vec4( position, 1.0 );
-            	worldPosition = mirrorCoord.xyzw;
-            	mirrorCoord = textureMatrix * mirrorCoord;
-
-            	vec3 p = position.xyz;
-            	p += GerstnerWave(waveA, position.xyz);
-            	p += GerstnerWave(waveB, position.xyz);
-            	p += GerstnerWave(waveC, position.xyz);
-            	gl_Position = projectionMatrix * modelViewMatrix * vec4( p.x, p.y, p.z, 1.0);
-
-            	#include <beginnormal_vertex>
-            	#include <defaultnormal_vertex>
-            	#include <logdepthbuf_vertex>
-            	#include <fog_vertex>
-            	#include <shadowmap_vertex>
-            }
-        </script>
-
-      <script id="fragmentShader" type="x-shader/x-fragment">
-            uniform sampler2D mirrorSampler;
+    return `
+        uniform sampler2D mirrorSampler;
             uniform float alpha;
             uniform float time;
             uniform float size;
@@ -92,18 +81,8 @@
                 diffuseColor += max( dot( sunDirection, surfaceNormal ), 0.0 ) * sunColor * diffuse;
             }
 
-            #include <common>
-            #include <packing>
-            #include <bsdfs>
-            #include <fog_pars_fragment>
-            #include <logdepthbuf_pars_fragment>
-            #include <lights_pars_begin>
-            #include <shadowmap_pars_fragment>
-            #include <shadowmask_pars_fragment>
-
             void main() {
 
-                #include <logdepthbuf_fragment>
                 vec4 noise = getNoise( worldPosition.xz * size );
                 vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );
 
@@ -126,18 +105,9 @@
                 vec3 albedo = mix( ( sunColor * diffuseLight * 0.3 + scatter ) * getShadowMask(), ( vec3( 0.1 ) + reflectionSample * 0.9 + reflectionSample * specularLight ), reflectance);
                 vec3 outgoingLight = albedo;
                 gl_FragColor = vec4( outgoingLight, alpha );
-
-                #include <tonemapping_fragment>
-                #include <fog_fragment>
             }
-        </script>
+    `;
 
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
-    <!-- built files will be auto injected -->
-  </body>
-</html>
+}
+
+export {getWaveVertexShader, getWaveFragmentShader};
