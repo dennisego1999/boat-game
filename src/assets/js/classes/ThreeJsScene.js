@@ -4,6 +4,7 @@ import {Water} from "three/examples/jsm/objects/Water";
 import {PointerLockControls} from '@/assets/js/util/PointerLockControls';
 import {PointerLockControlsMobile} from '@/assets/js/util/PointerLockControlsMobile';
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
+import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import {
     RepeatWrapping,
     PCFSoftShadowMap,
@@ -42,6 +43,8 @@ export default class ThreeJsScene {
         this.isPhone = isMobile(navigator.userAgent).phone;
         this.isTablet = isMobile(navigator.userAgent).tablet;
         this.gltfLoader = new GLTFLoader();
+        this.dracoLoader = new DRACOLoader();
+        this.gltfLoader.setDRACOLoader(this.dracoLoader);
         this.clock = new Clock();
         this.sunParameters = {
             elevation: 1.5,
@@ -79,19 +82,19 @@ export default class ThreeJsScene {
             },
             'q': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.1
+                func: () => this.targetSpeed.rotation = 0.01
             },
             'ArrowLeft': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.1
+                func: () => this.targetSpeed.rotation = 0.01
             },
             'd': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.1
+                func: () => this.targetSpeed.rotation = -0.01
             },
             'ArrowRight': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.1
+                func: () => this.targetSpeed.rotation = -0.01
             },
 
         };
@@ -114,9 +117,10 @@ export default class ThreeJsScene {
                     //Set boat variable
                     this.boat = getChildren(gltf.scene, ['Sketchfab_model'], 'exact')[0].children[0];
                     this.boat.scale.set(0.03, 0.03, 0.03);
-                    this.boat.position.z = -30;
                     this.boat.children[0].position.y = 10;
                     this.boat.rotation.y = Math.PI;
+
+                    console.log(this.boat)
 
                     //Add the boat to the scene
                     this.scene.add(this.boat);
