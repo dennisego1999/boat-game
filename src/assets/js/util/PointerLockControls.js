@@ -137,37 +137,6 @@ class PointerLockControls extends EventDispatcher {
 
 		};
 
-		this.getDirection = function () {
-
-			const direction = new Vector3( 0, 0, - 1 );
-			return function ( v ) {
-
-				return v.copy( direction ).applyQuaternion( camera.quaternion );
-
-			};
-
-		}();
-
-		this.moveForward = function ( distance ) {
-
-			// move forward parallel to the xz-plane
-			// assumes camera.up is y-up
-			_vector.setFromMatrixColumn( camera.matrix, 0 );
-
-			_vector.crossVectors( camera.up, _vector );
-
-			camera.position.addScaledVector( _vector, distance );
-
-		};
-
-		this.moveRight = function ( distance ) {
-
-			_vector.setFromMatrixColumn( camera.matrix, 0 );
-
-			camera.position.addScaledVector( _vector, distance );
-
-		};
-
 		this.lock = function () {
 
 			this.isLocked = true;

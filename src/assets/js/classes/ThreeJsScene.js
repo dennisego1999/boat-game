@@ -1,24 +1,15 @@
+import * as THREE from 'three';
 import isMobile from 'ismobilejs';
-import {Sky} from "three/examples/jsm/objects/Sky";
-import {Water} from "three/examples/jsm/objects/Water";
+import ParticleSystemData from '@/assets/js/particle-system/particle-system.json';
+import {GUI} from "dat.gui";
+import {getChildren} from '@/assets/js/util/gltfHelpers';
+import {Sky} from 'three/examples/jsm/objects/Sky';
+import {Water} from 'three/examples/jsm/objects/Water';
 import {PointerLockControls} from '@/assets/js/util/PointerLockControls';
 import {PointerLockControlsMobile} from '@/assets/js/util/PointerLockControlsMobile';
-import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
-import {
-    RepeatWrapping,
-    PCFSoftShadowMap,
-    MathUtils,
-    PerspectiveCamera,
-    PlaneGeometry,
-    Scene,
-    WebGLRenderer,
-    TextureLoader,
-    DirectionalLight,
-    Vector3,
-    PMREMGenerator, Vector2, Quaternion, Euler, Clock, Object3D,
-} from 'three';
-import {getChildren} from "@/assets/js/util/gltfHelpers";
+import System, {SpriteRenderer} from 'three-nebula';
 
 export default class ThreeJsScene {
 
@@ -36,6 +27,9 @@ export default class ThreeJsScene {
         this.sun = null;
         this.sky = null;
         this.boat = null
+        this.isMoving = false;
+        this.particleSystem = null;
+        this.emitterRenderer = null;
         this.keysPressed = [];
         this.rainVertices = [];
         this.canvas = document.querySelector('#three-js-container > canvas');
@@ -44,11 +38,13 @@ export default class ThreeJsScene {
         this.isTablet = isMobile(navigator.userAgent).tablet;
         this.gltfLoader = new GLTFLoader();
         this.dracoLoader = new DRACOLoader();
+        this.spriteRenderer = null;
+        this.gui = new GUI();
         this.gltfLoader.setDRACOLoader(this.dracoLoader);
-        this.clock = new Clock();
+        this.clock = new THREE.Clock();
         this.sunParameters = {
             elevation: 1.5,
-            azimuth: -140,
+            azimuth: -160,
         };
         this.waves = {
             A: { direction: 0, steepness: 0.02, wavelength: 60 },
@@ -82,19 +78,19 @@ export default class ThreeJsScene {
             },
             'q': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.01
+                func: () => this.targetSpeed.rotation = 0.003
             },
             'ArrowLeft': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.01
+                func: () => this.targetSpeed.rotation = 0.003
             },
             'd': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.01
+                func: () => this.targetSpeed.rotation = -0.003
             },
             'ArrowRight': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.01
+                func: () => this.targetSpeed.rotation = -0.003
             },
 
         };
@@ -118,9 +114,8 @@ export default class ThreeJsScene {
                     this.boat = getChildren(gltf.scene, ['Sketchfab_model'], 'exact')[0].children[0];
                     this.boat.scale.set(0.03, 0.03, 0.03);
                     this.boat.children[0].position.y = 10;
+                    this.boat.position.x = -10;
                     this.boat.rotation.y = Math.PI;
-
-                    console.log(this.boat)
 
                     //Add the boat to the scene
                     this.scene.add(this.boat);
@@ -140,20 +135,21 @@ export default class ThreeJsScene {
     async setupScene() {
 
         //Setup scene
-        this.scene = new Scene();
+        this.scene = new THREE.Scene();
 
         //Load models
         await this.loadModels();
 
         //Setup renderer
-        this.renderer = new WebGLRenderer({
+        this.renderer = new THREE.WebGLRenderer({
             antialias: true,
             powerPreference: 'high-performance',
             canvas: this.canvas,
+            alpha: true,
         });
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMapSoft = true;
-        this.renderer.shadowMap.type = PCFSoftShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
         //Set size & aspect ratio
         this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -221,8 +217,7 @@ export default class ThreeJsScene {
         this.controls.updateCamera();
 
         //Let the camera follow the boat
-        this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 35);
-
+        this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
         //Offset water
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
@@ -246,7 +241,7 @@ export default class ThreeJsScene {
     setupCamera() {
 
         //Set perspective camera
-        this.camera = new PerspectiveCamera(70, this.canvas.offsetWidth / this.canvas.offsetHeight, 0.1, 800);
+        this.camera = new THREE.PerspectiveCamera(70, this.canvas.offsetWidth / this.canvas.offsetHeight, 0.1, 800);
         this.camera.aspect = this.canvas.offsetWidth / this.canvas.offsetHeight;
         this.camera.updateProjectionMatrix();
 
@@ -258,17 +253,20 @@ export default class ThreeJsScene {
 
     setupSceneObjects() {
 
+        //Create smoke emitter
+        this.createSmokeEmitter();
+
         //Add water
-        const waterGeometry = new PlaneGeometry( 2048, 2048, 512, 512 );
+        const waterGeometry = new THREE.PlaneGeometry( 2048, 2048, 512, 512 );
         this.water = new Water(
             waterGeometry,
             {
                 textureWidth: 512,
                 textureHeight: 512,
-                waterNormals: new TextureLoader().load( 'textures/water/water_normals.jpeg', ( texture ) => {
-                    texture.wrapS = texture.wrapT = RepeatWrapping;
+                waterNormals: new THREE.TextureLoader().load( 'textures/water/water_normals.jpeg', ( texture ) => {
+                    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
                 }),
-                sunDirection: new Vector3(),
+                sunDirection: new THREE.Vector3(),
                 sunColor: 0xffffff,
                 waterColor: 0x001e0f,
                 distortionScale: 3.7,
@@ -333,28 +331,39 @@ export default class ThreeJsScene {
         this.setSun();
 
         //Add directional scene light
-        const directionalLight = new DirectionalLight(0xFFFFFF, 1);
-        directionalLight.position.set(25, 40, -30);
-        directionalLight.castShadow = true;
-        this.scene.add(directionalLight);
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.7);
+        ambientLight.position.set(0, 1000, -0);
+        this.scene.add(ambientLight);
+
+    }
+
+    createSmokeEmitter() {
+
+        System.fromJSONAsync(ParticleSystemData, THREE).then(system => {
+
+            this.particleSystem = system;
+            this.emitterRenderer = new SpriteRenderer(this.scene, THREE);
+            this.particleSystem.addRenderer(this.emitterRenderer);
+
+        });
 
     }
 
     getWaveInfo( x, z, time ) {
 
-        const pos = new Vector3();
-        const tangent = new Vector3( 1, 0, 0 );
-        const biNormal = new Vector3( 0, 0, 1 );
+        const pos = new THREE.Vector3();
+        const tangent = new THREE.Vector3( 1, 0, 0 );
+        const biNormal = new THREE.Vector3( 0, 0, 1 );
         Object.keys( this.waves ).forEach( ( wave ) => {
 
             const w = this.waves[ wave ];
             const k = ( Math.PI * 2 ) / w.wavelength;
             const c = Math.sqrt( 9.8 / k );
-            const d = new Vector2(
+            const d = new THREE.Vector2(
                 Math.sin( ( w.direction * Math.PI ) / 180 ),
                 - Math.cos( ( w.direction * Math.PI ) / 180 )
             );
-            const f = k * ( d.dot( new Vector2( x, z ) ) - c * time );
+            const f = k * ( d.dot( new THREE.Vector2( x, z ) ) - c * time );
             const a = w.steepness / k;
 
             pos.x += d.y * ( a * Math.cos( f ) );
@@ -382,7 +391,7 @@ export default class ThreeJsScene {
         const waveInfo = this.getWaveInfo( this.boat.position.x, this.boat.position.z, time );
         this.boat.position.y = waveInfo.position.y;
 
-        const euler = new Euler().setFromVector3(waveInfo.normal);
+        const euler = new THREE.Euler().setFromVector3(waveInfo.normal);
         this.boat.rotation.x = euler.x;
         this.boat.rotation.z = euler.z;
 
@@ -392,18 +401,29 @@ export default class ThreeJsScene {
 
         this.boat.rotation.y += this.currentSpeed.rotation;
         this.boat.translateZ(this.currentSpeed.velocity);
+
+        if(this.particleSystem && this.isMoving) {
+
+            //Set the position of the emitters
+             this.particleSystem.emitters.forEach(emitter => emitter.position.set(this.boat.position.x, this.boat.position.y + 9.5, this.boat.position.z));
+
+            //Update the emitters
+            this.particleSystem.update();
+
+        }
+
     }
 
     setSun() {
 
-        const pmremGenerator = new PMREMGenerator( this.renderer );
+        const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
         let renderTarget;
 
-        const phi = MathUtils.degToRad( 90 - this.sunParameters.elevation );
-        const theta = MathUtils.degToRad( this.sunParameters.azimuth );
+        const phi = THREE.MathUtils.degToRad( 90 - this.sunParameters.elevation );
+        const theta = THREE.MathUtils.degToRad( this.sunParameters.azimuth );
 
         //Add sun
-        this.sun = new Vector3();
+        this.sun = new THREE.Vector3();
         this.sun.setFromSphericalCoords( 1, phi, theta );
 
         this.sky.material.uniforms[ 'sunPosition' ].value.copy( this.sun );
@@ -441,9 +461,28 @@ export default class ThreeJsScene {
 
         }
 
+        //Check if user 0 keys are pressed
+        const isBoatStationary = Object.keys(this.boatMovementController).filter(key => this.boatMovementController[key].pressed).length === 0;
+
+        if(isBoatStationary) {
+
+            //Set moving state
+            this.isMoving = false;
+
+            //Stop emitting particles
+            this.particleSystem.emitters.forEach(emitter => emitter.stopEmit());
+
+        }
+
     }
 
     onKeyDown(event) {
+
+        //Set state
+        this.isMoving = true;
+
+        //Start emitting particles
+        this.particleSystem.emitters.forEach(emitter => emitter.emit());
 
         //Set pressed key state
         if(this.boatMovementController[event.key]){
@@ -453,21 +492,7 @@ export default class ThreeJsScene {
         //Call pressed key function
         Object.keys(this.boatMovementController).forEach(key => {
             this.boatMovementController[key].pressed && this.boatMovementController[key].func()
-        })
-
-    }
-
-    resetCameraMovement() {
-
-        this.controls.currentMovement = {
-            x: 0,
-            y: 0,
-        };
-
-        this.controls.targetMovement = {
-            x: 0,
-            y: 0,
-        };
+        });
 
     }
 
@@ -484,10 +509,6 @@ export default class ThreeJsScene {
 
     getAnimateFrameId() {
         return this.animateFrameId;
-    }
-
-    randomNumberBetweenMinMax(min, max) { // min and max included
-        return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
 }
