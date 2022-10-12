@@ -258,7 +258,7 @@ export default class GameScene {
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
         //Stick camera position and rotation to boat
-        this.camera.position.set(this.boat.position.x, this.boat.position.y + 10, this.boat.position.z + 35);
+        this.camera.position.set(this.boat.position.x, this.boat.position.y + 9, this.boat.position.z + 32);
 
         //Update boat
         this.updateBoatAndLostBoxes();
