@@ -89,14 +89,14 @@ export default defineComponent({
         function restartGame() {
 
             //Reload window
-            location.reload();
+            scene.resetGame();
 
         }
 
        nextTick(() => {
 
            //Create scene
-           scene = new GameScene(amountOfBoxesRecovered, totalAmountOfLostBoxes);
+           scene = new GameScene(gameIsWon, amountOfBoxesRecovered, totalAmountOfLostBoxes);
 
            //Add event listeners
            window.addEventListener('resize', () => scene.resizeScene.call(scene));
@@ -133,7 +133,7 @@ export default defineComponent({
 
                if(oldValue !== newValue) {
 
-                   console.log('increased: ', newValue)
+                   //Set game state
                    newValue === totalAmountOfLostBoxes ? gameIsWon.value = true : gameIsWon.value = false;
 
                }

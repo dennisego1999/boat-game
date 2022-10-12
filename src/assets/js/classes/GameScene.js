@@ -14,7 +14,7 @@ import {MathUtils} from "three";
 
 export default class GameScene {
 
-    constructor(amountOfBoxesRecovered, totalAmountOfLostBoxes) {
+    constructor(gameIsWon, amountOfBoxesRecovered, totalAmountOfLostBoxes) {
 
         //Set variables
         this.isLoaded = ref(false);
@@ -31,6 +31,7 @@ export default class GameScene {
         this.boat = null;
         this.box = null;
         this.floatingBoxes = [];
+        this.gameIsWon = gameIsWon;
         this.amountOfBoxesRecovered = amountOfBoxesRecovered;
         this.totalAmountOfLostBoxes = totalAmountOfLostBoxes;
         this.isMoving = false;
@@ -150,7 +151,6 @@ export default class GameScene {
             this.boat = getChildren(values[0].scene,['Sketchfab_model'],'exact')[0].children[0];
             this.boat.scale.set(0.03, 0.03, 0.03);
             this.boat.children[0].position.y = 10;
-            this.boat.position.x = -10;
             this.boat.rotation.y = Math.PI;
 
             //Add the boat to the scene
@@ -161,20 +161,7 @@ export default class GameScene {
             this.box.scale.set(0.02, 0.02, 0.02);
 
             //Generate x amount of randomly places floating boxes
-            for (let i = 0; i < this.totalAmountOfLostBoxes; i++) {
-
-                const randomBox = this.box.clone();
-                this.floatingBoxes.push(randomBox);
-
-                //Set random position
-                const rx = MathUtils.randInt(-100, 100);
-                const rz = MathUtils.randInt(-150, -250);
-                randomBox.position.set(rx, 1, rz);
-
-                //Add to scene
-                this.scene.add(randomBox);
-
-            }
+            this.generateRandomlyPlacedBoxes();
 
             //Set load state
             this.isLoaded.value = true;
@@ -274,7 +261,7 @@ export default class GameScene {
         this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
 
         //Update boat
-        this.updateBoat();
+        this.updateBoatAndLostBoxes();
 
         //Render
         this.renderer.render(this.scene, this.camera);
@@ -397,6 +384,32 @@ export default class GameScene {
 
     }
 
+    generateRandomlyPlacedBoxes() {
+
+        let previousRx;
+        let previousRz;
+
+        for (let i = 0; i < this.totalAmountOfLostBoxes; i++) {
+
+            const randomBox = this.box.clone();
+            this.floatingBoxes.push(randomBox);
+
+            //Set random position
+            const rx = MathUtils.randInt(-100, 100);
+            const rz = MathUtils.randInt(-150, -250);
+            randomBox.position.set(rx !== previousRx ? rx : rx + 5, 0.3, rz !== previousRz ? rz : rz + 5);
+
+            //Set previous variables
+            previousRx = rx;
+            previousRz = rz;
+
+            //Add to scene
+            this.scene.add(randomBox);
+
+        }
+
+    }
+
     createSmokeEmitter() {
 
         System.fromJSONAsync(ParticleSystemData, THREE).then(system => {
@@ -451,14 +464,16 @@ export default class GameScene {
 
     }
 
-    updateBoat() {
+    updateBoatAndLostBoxes() {
         const time = this.water.material.uniforms[ 'time' ].value;
         const waveInfo = this.getWaveInfo( this.boat.position.x, this.boat.position.z, time );
         this.boat.position.y = waveInfo.position.y;
+        this.floatingBoxes.forEach(box => box.position.y);
 
         const euler = new THREE.Euler().setFromVector3(waveInfo.normal);
         this.boat.rotation.x = euler.x;
         this.boat.rotation.z = euler.z;
+        this.floatingBoxes.forEach(box => box.rotation.set(euler.x, box.rotation.y, euler.z));
 
         //lerp
         this.currentSpeed.velocity = this.lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
@@ -466,6 +481,17 @@ export default class GameScene {
 
         this.boat.rotation.y += this.currentSpeed.rotation;
         this.boat.translateZ(this.currentSpeed.velocity);
+
+        if(this.gameIsWon.value) {
+
+            //Reset movement when game is won
+            this.targetSpeed.velocity = 0;
+            this.targetSpeed.rotation = 0;
+
+            //Set normal rate
+            this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.normalRate));
+
+        }
 
         if(this.particleSystem) {
 
@@ -475,25 +501,25 @@ export default class GameScene {
             //Update the emitters
             this.particleSystem.update();
 
-            //Check if boat collides with boxes
-            this.floatingBoxes.forEach(box => {
-
-                if(this.isColliding(this.boat, box)) {
-
-                    //Remove box from scene
-                    this.scene.remove(box);
-
-                    //Increase the amount of recovered boxes
-                    this.amountOfBoxesRecovered.value++;
-
-                    //Clean up array
-                    this.floatingBoxes = this.floatingBoxes.filter(boxFromArray => box !== boxFromArray);
-
-                }
-
-            });
-
         }
+
+        //Check if boat collides with boxes
+        this.floatingBoxes.forEach(box => {
+
+            if(this.isColliding(this.boat, box)) {
+
+                //Remove box from scene
+                this.scene.remove(box);
+
+                //Increase the amount of recovered boxes
+                this.amountOfBoxesRecovered.value++;
+
+                //Clean up array
+                this.floatingBoxes = this.floatingBoxes.filter(boxFromArray => box !== boxFromArray);
+
+            }
+
+        });
 
     }
 
@@ -594,6 +620,23 @@ export default class GameScene {
 
     getAnimateFrameId() {
         return this.animateFrameId;
+    }
+
+    resetGame() {
+
+        //Reset amount of recovered boxes
+        this.amountOfBoxesRecovered.value = 0;
+
+        //Reset boat position and rotation
+        this.boat.position.set(0, 0, 0);
+        this.boat.rotation.y = Math.PI;
+
+        //Generate new randomly placed boxes
+        this.generateRandomlyPlacedBoxes();
+
+        //Reset state
+        this.gameIsWon.value = false;
+
     }
 
 }
