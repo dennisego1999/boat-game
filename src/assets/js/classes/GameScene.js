@@ -257,8 +257,8 @@ export default class GameScene {
         //Offset water
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
-        //Stick camera position to boat
-        this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
+        //Stick camera position and rotation to boat
+        this.camera.position.set(this.boat.position.x, this.boat.position.y + 10, this.boat.position.z + 35);
 
         //Update boat
         this.updateBoatAndLostBoxes();
