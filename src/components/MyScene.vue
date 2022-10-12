@@ -8,7 +8,7 @@
 
             <transition name="fade" mode="out-in">
 
-                <div v-if="isLoaded && !isExperiencedLaunched" @click="playAudio" class="experience-button bg-transparent hover:bg-[#03E8FC] hover:cursor-pointer text-white font-semibold hover:text-white py-2 px-4 border border-white hover:border-transparent rounded">
+                <div v-if="isLoaded && !isExperiencedLaunched" @click="playAudio" class="experience-button bg-transparent hover:cursor-pointer text-white font-semibold hover:text-white py-2 px-4 border border-white rounded">
                     Start the experience
                 </div>
 
@@ -60,12 +60,30 @@ export default defineComponent({
        nextTick(() => {
 
            //Create scene
-           scene = new ThreeJsScene();
+           scene = new ThreeJsScene(isExperiencedLaunched);
 
            //Add event listeners
            window.addEventListener('resize', () => scene.resizeScene.call(scene));
-           window.addEventListener('keydown', (event) => scene.onKeyDown.call(scene, event));
-           window.addEventListener('keyup', (event) => scene.onKeyUp.call(scene, event));
+           window.addEventListener('keydown', (event) => {
+
+               if(!isExperiencedLaunched.value) {
+                   return;
+               }
+
+               //Call func
+               scene.onKeyDown.call(scene, event);
+
+           });
+           window.addEventListener('keyup', (event) => {
+
+               if(!isExperiencedLaunched.value) {
+                   return;
+               }
+
+               //Call func
+               scene.onKeyUp.call(scene, event)
+
+           });
 
            watch(scene.isLoaded, (newValue, oldValue) => {
 
