@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import isMobile from 'ismobilejs';
 import ParticleSystemData from '@/assets/js/particle-system/particle-system.json';
-import {GUI} from "dat.gui";
 import {getChildren} from '@/assets/js/util/gltfHelpers';
 import {Sky} from 'three/examples/jsm/objects/Sky';
 import {Water} from 'three/examples/jsm/objects/Water';
@@ -10,12 +9,15 @@ import {PointerLockControlsMobile} from '@/assets/js/util/PointerLockControlsMob
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import System, {Rate, Span, SpriteRenderer} from 'three-nebula';
+import {ref} from 'vue';
+import {AnimationMixer, LoopRepeat} from "three";
 
 export default class ThreeJsScene {
 
     constructor() {
 
         //Set variables
+        this.isLoaded = ref(false);
         this.fps = 1000 / 30;
         this.then = null;
         this.scene = null;
@@ -26,7 +28,7 @@ export default class ThreeJsScene {
         this.water = null;
         this.sun = null;
         this.sky = null;
-        this.boat = null
+        this.boat = null;
         this.isMoving = false;
         this.particleSystem = null;
         this.emitterRenderer = null;
@@ -41,7 +43,6 @@ export default class ThreeJsScene {
         this.spriteRenderer = null;
         this.highRate = new Rate(new Span(2, 6), new Span(0.05, 0.009));
         this.normalRate = new Rate(new Span(1, 5), new Span(0.5, 0.02));
-        this.gui = new GUI();
         this.gltfLoader.setDRACOLoader(this.dracoLoader);
         this.clock = new THREE.Clock();
         this.sunParameters = {
@@ -104,31 +105,38 @@ export default class ThreeJsScene {
 
     loadModels() {
 
-        //Set loader
-        return new Promise((resolve, reject) => {
+        //Set loader 1
+        const loader1 = new Promise((resolve, reject) => {
 
-            // Load the centered stress type
+            // Load the boat
             this.gltfLoader.load(
                 '/js/models/boat/boat.gltf',
                 (gltf) => {
 
-                    //Set boat variable
-                    this.boat = getChildren(gltf.scene, ['Sketchfab_model'], 'exact')[0].children[0];
-                    this.boat.scale.set(0.03, 0.03, 0.03);
-                    this.boat.children[0].position.y = 10;
-                    this.boat.position.x = -10;
-                    this.boat.rotation.y = Math.PI;
-
-                    //Add the boat to the scene
-                    this.scene.add(this.boat);
-
                     //Resolve
-                    resolve();
+                    resolve(gltf);
 
                 },
                 () => {},
                 (error) => reject(error),
             );
+
+        });
+
+        return Promise.all([loader1]).then(values => {
+
+            //Set boat variable
+            this.boat = getChildren(values[0].scene, ['Sketchfab_model'], 'exact')[0].children[0];
+            this.boat.scale.set(0.03, 0.03, 0.03);
+            this.boat.children[0].position.y = 10;
+            this.boat.position.x = -10;
+            this.boat.rotation.y = Math.PI;
+
+            //Add the boat to the scene
+            this.scene.add(this.boat);
+
+            //Set load state
+            this.isLoaded.value = true;
 
         });
 
@@ -218,13 +226,13 @@ export default class ThreeJsScene {
         //Set camera
         this.controls.updateCamera();
 
-        //Let the camera follow the boat
-        this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
-
         //Offset water
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
-        //Set boat
+        //Stick camera position to boat
+        this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
+
+        //Update boat
         this.updateBoat();
 
         //Render
