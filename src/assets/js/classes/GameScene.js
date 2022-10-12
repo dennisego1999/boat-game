@@ -10,11 +10,11 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import System, {Rate, Span, SpriteRenderer} from 'three-nebula';
 import {ref} from 'vue';
-import {AnimationMixer, LoopRepeat} from "three";
+import {MathUtils} from "three";
 
-export default class ThreeJsScene {
+export default class GameScene {
 
-    constructor() {
+    constructor(amountOfBoxesRecovered, totalAmountOfLostBoxes) {
 
         //Set variables
         this.isLoaded = ref(false);
@@ -29,11 +29,14 @@ export default class ThreeJsScene {
         this.sun = null;
         this.sky = null;
         this.boat = null;
+        this.box = null;
+        this.floatingBoxes = [];
+        this.amountOfBoxesRecovered = amountOfBoxesRecovered;
+        this.totalAmountOfLostBoxes = totalAmountOfLostBoxes;
         this.isMoving = false;
         this.particleSystem = null;
         this.emitterRenderer = null;
         this.keysPressed = [];
-        this.rainVertices = [];
         this.canvas = document.querySelector('#three-js-container > canvas');
         this.isIpad = (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1) || (isMobile(navigator.userAgent).apple.tablet);
         this.isPhone = isMobile(navigator.userAgent).phone;
@@ -123,10 +126,28 @@ export default class ThreeJsScene {
 
         });
 
-        return Promise.all([loader1]).then(values => {
+        //Set loader 2
+        const loader2 = new Promise((resolve, reject) => {
+
+            // Load the boat
+            this.gltfLoader.load(
+                '/js/models/box/box.gltf',
+                (gltf) => {
+
+                    //Resolve
+                    resolve(gltf);
+
+                },
+                () => {},
+                (error) => reject(error),
+            );
+
+        });
+
+        return Promise.all([loader1, loader2]).then(values => {
 
             //Set boat variable
-            this.boat = getChildren(values[0].scene, ['Sketchfab_model'], 'exact')[0].children[0];
+            this.boat = getChildren(values[0].scene,['Sketchfab_model'],'exact')[0].children[0];
             this.boat.scale.set(0.03, 0.03, 0.03);
             this.boat.children[0].position.y = 10;
             this.boat.position.x = -10;
@@ -134,6 +155,26 @@ export default class ThreeJsScene {
 
             //Add the boat to the scene
             this.scene.add(this.boat);
+
+            //Set box variable
+            this.box = getChildren(values[1].scene,['Sketchfab_model'],'exact')[0].children[0];
+            this.box.scale.set(0.02, 0.02, 0.02);
+
+            //Generate x amount of randomly places floating boxes
+            for (let i = 0; i < this.totalAmountOfLostBoxes; i++) {
+
+                const randomBox = this.box.clone();
+                this.floatingBoxes.push(randomBox);
+
+                //Set random position
+                const rx = MathUtils.randInt(-100, 100);
+                const rz = MathUtils.randInt(-150, -250);
+                randomBox.position.set(rx, 1, rz);
+
+                //Add to scene
+                this.scene.add(randomBox);
+
+            }
 
             //Set load state
             this.isLoaded.value = true;
@@ -247,6 +288,14 @@ export default class ThreeJsScene {
         amount = amount > 1 ? 1 : amount;
 
         return value1 + (value2 - value1) * amount;
+    }
+
+    isColliding(obj1, obj2) {
+
+        //Set factor => distance from center of boat
+        const factor = 14;
+
+        return  Math.abs(obj1.position.x - obj2.position.x) < factor &&  Math.abs(obj1.position.z - obj2.position.z) < factor;
     }
 
     setupCamera() {
@@ -425,6 +474,24 @@ export default class ThreeJsScene {
 
             //Update the emitters
             this.particleSystem.update();
+
+            //Check if boat collides with boxes
+            this.floatingBoxes.forEach(box => {
+
+                if(this.isColliding(this.boat, box)) {
+
+                    //Remove box from scene
+                    this.scene.remove(box);
+
+                    //Increase the amount of recovered boxes
+                    this.amountOfBoxesRecovered.value++;
+
+                    //Clean up array
+                    this.floatingBoxes = this.floatingBoxes.filter(boxFromArray => box !== boxFromArray);
+
+                }
+
+            });
 
         }
 

@@ -1,5 +1,23 @@
 <template>
 
+    <div v-if="gameIsWon" @click="restartGame" class="absolute z-[20] top-[20px] left-[20px] bg-transparent hover:cursor-pointer text-white font-semibold hover:text-white py-2 px-4 border border-white rounded">
+        Restart game
+    </div>
+
+    <div v-if="isLoaded && isExperiencedLaunched" class="absolute z-[10] top-[20px] right-[20px] flex justify-center items-center gap-[5px] text-white">
+
+        <h2 class="font-weight-bold text-uppercase">Boxes recovered: </h2>
+
+        <div class=" flex justify-between items-center">
+
+            <p class="m-0">{{ amountOfBoxesRecovered }}</p>
+            /
+            <p class="m-0">{{ totalAmountOfLostBoxes }}</p>
+
+        </div>
+
+    </div>
+
     <transition name="fade" mode="out-in">
 
         <div v-if="!isExperiencedLaunched" class="loader absolute inset-0 h-screen w-screen">
@@ -8,8 +26,16 @@
 
             <transition name="fade" mode="out-in">
 
-                <div v-if="isLoaded && !isExperiencedLaunched" @click="playAudio" class="experience-button bg-transparent hover:cursor-pointer text-white font-semibold hover:text-white py-2 px-4 border border-white rounded">
-                    Start the experience
+                <div v-if="isLoaded && !isExperiencedLaunched" class="experience-button flex items-center justify-center flex-col gap-[5px]">
+
+                    <h2 class="text-white">Collect all lost cargo!</h2>
+
+                    <div class="bg-white h-[1px] w-full mb-2"></div>
+
+                    <div @click="playAudio" class="bg-transparent hover:cursor-pointer text-white font-semibold hover:text-white py-2 px-4 border border-white rounded">
+                        Start the experience
+                    </div>
+
                 </div>
 
             </transition>
@@ -31,13 +57,16 @@
 
 <script>
 import {defineComponent, nextTick, watch, ref, onBeforeUnmount} from 'vue';
-import ThreeJsScene from "@/assets/js/classes/ThreeJsScene";
+import GameScene from "@/assets/js/classes/GameScene";
 
 export default defineComponent({
     setup() {
 
         //Set variables
         let scene;
+        const gameIsWon = ref(false);
+        const amountOfBoxesRecovered = ref(0);
+        const totalAmountOfLostBoxes = 10;
         const isMuted = ref(false);
         const isLoaded = ref(false);
         const isExperiencedLaunched = ref(false);
@@ -57,16 +86,23 @@ export default defineComponent({
 
         }
 
+        function restartGame() {
+
+            //Reload window
+            location.reload();
+
+        }
+
        nextTick(() => {
 
            //Create scene
-           scene = new ThreeJsScene(isExperiencedLaunched);
+           scene = new GameScene(amountOfBoxesRecovered, totalAmountOfLostBoxes);
 
            //Add event listeners
            window.addEventListener('resize', () => scene.resizeScene.call(scene));
            window.addEventListener('keydown', (event) => {
 
-               if(!isExperiencedLaunched.value) {
+               if(!isExperiencedLaunched.value || gameIsWon.value) {
                    return;
                }
 
@@ -76,7 +112,7 @@ export default defineComponent({
            });
            window.addEventListener('keyup', (event) => {
 
-               if(!isExperiencedLaunched.value) {
+               if(!isExperiencedLaunched.value || gameIsWon.value) {
                    return;
                }
 
@@ -89,6 +125,17 @@ export default defineComponent({
 
                if(newValue && oldValue !== newValue) {
                    isLoaded.value = true;
+               }
+
+           });
+
+           watch(amountOfBoxesRecovered, (newValue, oldValue) => {
+
+               if(oldValue !== newValue) {
+
+                   console.log('increased: ', newValue)
+                   newValue === totalAmountOfLostBoxes ? gameIsWon.value = true : gameIsWon.value = false;
+
                }
 
            });
@@ -110,10 +157,14 @@ export default defineComponent({
         return {
             isLoaded,
             isMuted,
+            gameIsWon,
             ambienceSound,
             backgroundMusic,
             isExperiencedLaunched,
-            playAudio
+            amountOfBoxesRecovered,
+            totalAmountOfLostBoxes,
+            playAudio,
+            restartGame
         };
 
     },

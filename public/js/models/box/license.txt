@@ -1,0 +1,11 @@
+Model Information:
+* title:	Crate box
+* source:	https://sketchfab.com/3d-models/crate-box-e1a6856037c54d0d9019aedf61315569
+* author:	KloWorks (https://sketchfab.com/kloworks)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Crate box" (https://sketchfab.com/3d-models/crate-box-e1a6856037c54d0d9019aedf61315569) by KloWorks (https://sketchfab.com/kloworks) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
