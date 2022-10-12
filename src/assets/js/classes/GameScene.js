@@ -54,9 +54,9 @@ export default class GameScene {
             azimuth: -160,
         };
         this.waves = {
-            A: { direction: 0, steepness: 0.02, wavelength: 60 },
-            B: { direction: 0, steepness: 0.03, wavelength: 30 },
-            C: { direction: 0, steepness: 0.01, wavelength: 15 },
+            A: { direction: 0, steepness: 0.025, wavelength: 60 },
+            B: { direction: 30, steepness: 0.03, wavelength: 30 },
+            C: { direction: 60, steepness: 0.01, wavelength: 15 },
         };
         this.currentSpeed = {
             velocity: 0,
@@ -149,7 +149,7 @@ export default class GameScene {
 
             //Set boat variable
             this.boat = getChildren(values[0].scene,['Sketchfab_model'],'exact')[0].children[0];
-            this.boat.scale.set(0.03, 0.03, 0.03);
+            this.boat.scale.set(0.04, 0.04, 0.04);
             this.boat.children[0].position.y = 10;
             this.boat.rotation.y = Math.PI;
 
@@ -304,7 +304,7 @@ export default class GameScene {
         this.createSmokeEmitter();
 
         //Add water
-        const waterGeometry = new THREE.PlaneGeometry( 999999, 999999, 512, 512 );
+        const waterGeometry = new THREE.PlaneGeometry( 8192, 8192, 512, 512 );
         this.water = new Water(
             waterGeometry,
             {
@@ -349,8 +349,8 @@ export default class GameScene {
                     this.waves.C.wavelength,
                 ],
             };
-            shader.vertexShader = document.getElementById( 'vertexShader' ).textContent;
-            shader.fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+            shader.vertexShader = document.getElementById('vertexShader').textContent;
+            shader.fragmentShader = document.getElementById('fragmentShader').textContent;
 
         };
 
@@ -360,7 +360,7 @@ export default class GameScene {
         waterUniforms['size'].value = 3.5;
 
         //Add water to scene
-        this.scene.add( this.water );
+        this.scene.add(this.water);
 
         //Add sky
         this.sky = new Sky();
@@ -369,10 +369,10 @@ export default class GameScene {
 
         //Set sky uniforms
         const skyUniforms = this.sky.material.uniforms;
-        skyUniforms[ 'turbidity' ].value = 10;
-        skyUniforms[ 'rayleigh' ].value = 2;
-        skyUniforms[ 'mieCoefficient' ].value = 0.005;
-        skyUniforms[ 'mieDirectionalG' ].value = 0.5;
+        skyUniforms['turbidity'].value = 10;
+        skyUniforms['rayleigh'].value = 2;
+        skyUniforms['mieCoefficient'].value = 0.005;
+        skyUniforms['mieDirectionalG'].value = 0.5;
 
         //Set sun
         this.setSun();
@@ -397,7 +397,7 @@ export default class GameScene {
             //Set random position
             const rx = MathUtils.randInt(-100, 100);
             const rz = MathUtils.randInt(-150, -250);
-            randomBox.position.set(rx !== previousRx ? rx : rx + 5, 0.3, rz !== previousRz ? rz : rz + 5);
+            randomBox.position.set(rx !== previousRx ? rx : rx + 5, 0, rz !== previousRz ? rz : rz + 5);
 
             //Set previous variables
             previousRx = rx;
@@ -465,15 +465,16 @@ export default class GameScene {
     }
 
     updateBoatAndLostBoxes() {
-        const time = this.water.material.uniforms[ 'time' ].value;
-        const waveInfo = this.getWaveInfo( this.boat.position.x, this.boat.position.z, time );
-        this.boat.position.y = waveInfo.position.y;
-        this.floatingBoxes.forEach(box => box.position.y);
 
-        const euler = new THREE.Euler().setFromVector3(waveInfo.normal);
-        this.boat.rotation.x = euler.x;
-        this.boat.rotation.z = euler.z;
-        this.floatingBoxes.forEach(box => box.rotation.set(euler.x, box.rotation.y, euler.z));
+        //Set position
+        const time = this.water.material.uniforms[ 'time' ].value;
+        const boatWaveInfo = this.getWaveInfo( this.boat.position.x, this.boat.position.z, time );
+        this.boat.position.y = boatWaveInfo.position.y;
+
+        //Set rotation
+        const boatEuler = new THREE.Euler().setFromVector3(boatWaveInfo.normal);
+        this.boat.rotation.x = boatEuler.x;
+        this.boat.rotation.z = boatEuler.z;
 
         //lerp
         this.currentSpeed.velocity = this.lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
@@ -496,7 +497,7 @@ export default class GameScene {
         if(this.particleSystem) {
 
             //Set the position of the emitters
-             this.particleSystem.emitters.forEach(emitter => emitter.position.set(this.boat.position.x, this.boat.position.y + 9.5, this.boat.position.z));
+             this.particleSystem.emitters.forEach(emitter => emitter.position.set(this.boat.position.x, this.boat.position.y + 11.5, this.boat.position.z));
 
             //Update the emitters
             this.particleSystem.update();
@@ -505,6 +506,13 @@ export default class GameScene {
 
         //Check if boat collides with boxes
         this.floatingBoxes.forEach(box => {
+
+            const boxWaveInfo = this.getWaveInfo(box.position.x, box.position.z, time );
+            box.position.y = boxWaveInfo.position.y
+
+            const boxEuler = new THREE.Euler().setFromVector3(boxWaveInfo.normal);
+            box.rotation.x = boxEuler.x;
+            box.rotation.z = boxEuler.z;
 
             if(this.isColliding(this.boat, box)) {
 
