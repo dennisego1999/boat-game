@@ -9,7 +9,7 @@ import {PointerLockControls} from '@/assets/js/util/PointerLockControls';
 import {PointerLockControlsMobile} from '@/assets/js/util/PointerLockControlsMobile';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
-import System, {SpriteRenderer} from 'three-nebula';
+import System, {Rate, Span, SpriteRenderer} from 'three-nebula';
 
 export default class ThreeJsScene {
 
@@ -39,6 +39,8 @@ export default class ThreeJsScene {
         this.gltfLoader = new GLTFLoader();
         this.dracoLoader = new DRACOLoader();
         this.spriteRenderer = null;
+        this.highRate = new Rate(new Span(2, 6), new Span(0.05, 0.009));
+        this.normalRate = new Rate(new Span(1, 5), new Span(0.5, 0.02));
         this.gui = new GUI();
         this.gltfLoader.setDRACOLoader(this.dracoLoader);
         this.clock = new THREE.Clock();
@@ -218,6 +220,7 @@ export default class ThreeJsScene {
 
         //Let the camera follow the boat
         this.camera.position.set(this.boat.position.x, this.boat.position.y + 6, this.boat.position.z + 30);
+
         //Offset water
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
@@ -345,6 +348,11 @@ export default class ThreeJsScene {
             this.emitterRenderer = new SpriteRenderer(this.scene, THREE);
             this.particleSystem.addRenderer(this.emitterRenderer);
 
+            //Set normal rate
+            this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.normalRate));
+
+            window.particleSystem = this.particleSystem;
+
         });
 
     }
@@ -402,7 +410,7 @@ export default class ThreeJsScene {
         this.boat.rotation.y += this.currentSpeed.rotation;
         this.boat.translateZ(this.currentSpeed.velocity);
 
-        if(this.particleSystem && this.isMoving) {
+        if(this.particleSystem) {
 
             //Set the position of the emitters
              this.particleSystem.emitters.forEach(emitter => emitter.position.set(this.boat.position.x, this.boat.position.y + 9.5, this.boat.position.z));
@@ -459,18 +467,18 @@ export default class ThreeJsScene {
             //Stop the boat
             this.stopBoat(event.key);
 
-        }
+            //Check if user 0 keys are pressed
+            const isBoatStationary = Object.keys(this.boatMovementController).filter(key => this.boatMovementController[key].pressed).length === 0;
 
-        //Check if user 0 keys are pressed
-        const isBoatStationary = Object.keys(this.boatMovementController).filter(key => this.boatMovementController[key].pressed).length === 0;
+            if(isBoatStationary) {
 
-        if(isBoatStationary) {
+                //Set moving state
+                this.isMoving = false;
 
-            //Set moving state
-            this.isMoving = false;
+                //Set normal rate
+                this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.normalRate));
 
-            //Stop emitting particles
-            this.particleSystem.emitters.forEach(emitter => emitter.stopEmit());
+            }
 
         }
 
@@ -478,15 +486,17 @@ export default class ThreeJsScene {
 
     onKeyDown(event) {
 
-        //Set state
-        this.isMoving = true;
-
-        //Start emitting particles
-        this.particleSystem.emitters.forEach(emitter => emitter.emit());
-
-        //Set pressed key state
         if(this.boatMovementController[event.key]){
+
+            //Set pressed key state
             this.boatMovementController[event.key].pressed = true;
+
+            //Set state
+            this.isMoving = true;
+
+            //Set higher rate
+            this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.highRate));
+
         }
 
         //Call pressed key function

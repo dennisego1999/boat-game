@@ -9,9 +9,9 @@
       "cache": { "totalEmitTimes": null, "life": null },
       "rate": {
         "particlesMin": 1,
-        "particlesMax": 4,
-        "perSecondMin": 0.01,
-        "perSecondMax": 0.02
+        "particlesMax": 5,
+        "perSecondMin": 0.5,
+        "perSecondMax": 0.01
       },
       "position": { "x": 0, "y": 0, "z": 0 },
       "rotation": { "x": 0, "y": 0, "z": 0 },
@@ -19,12 +19,12 @@
         {
           "id": "51ca9451-3d8b-11e9-a1e8-4785d9606b75",
           "type": "Mass",
-          "properties": { "min": 30, "max": 10, "isEnabled": true }
+          "properties": { "min": 1, "max": 5, "isEnabled": true }
         },
         {
           "id": "51ca9452-3d8b-11e9-a1e8-4785d9606b75",
           "type": "Life",
-          "properties": { "min": 2, "max": 4, "isEnabled": true }
+          "properties": { "min": 1, "max": 4, "isEnabled": true }
         },
         {
           "id": "51ca9453-3d8b-11e9-a1e8-4785d9606b75",
@@ -47,7 +47,7 @@
             "x": 0,
             "y": 2,
             "z": 0,
-            "theta": 500,
+            "theta": 100,
             "isEnabled": true
           }
         }
@@ -78,7 +78,7 @@
           "type": "Scale",
           "properties": {
             "scaleA": 0.8,
-            "scaleB": 2.5,
+            "scaleB": 1.5,
             "life": null,
             "easing": "easeLinear"
           }
@@ -88,7 +88,7 @@
           "type": "Force",
           "properties": {
             "fx": 0,
-            "fy": 5,
+            "fy": 0.3,
             "fz": 0,
             "life": null,
             "easing": "easeLinear"
