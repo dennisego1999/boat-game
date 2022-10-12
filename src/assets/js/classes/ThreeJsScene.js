@@ -64,19 +64,19 @@ export default class ThreeJsScene {
         this.boatMovementController = {
             'z': {
                 pressed: false,
-                func: () => this.targetSpeed.velocity = 0.1
+                func: () => this.targetSpeed.velocity = 0.2
             },
             'ArrowUp': {
                 pressed: false,
-                func: () => this.targetSpeed.velocity = 0.1
+                func: () => this.targetSpeed.velocity = 0.2
             },
             's': {
                 pressed: false,
-                func: () => this.targetSpeed.velocity = -0.1
+                func: () => this.targetSpeed.velocity = -0.2
             },
             'ArrowDown': {
                 pressed: false,
-                func: () => this.targetSpeed.velocity = -0.1
+                func: () => this.targetSpeed.velocity = -0.2
             },
             'q': {
                 pressed: false,
@@ -404,8 +404,8 @@ export default class ThreeJsScene {
         this.boat.rotation.z = euler.z;
 
         //lerp
-        this.currentSpeed.velocity = this.lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.1);
-        this.currentSpeed.rotation = this.lerp(this.currentSpeed.rotation, this.targetSpeed.rotation, 0.1);
+        this.currentSpeed.velocity = this.lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
+        this.currentSpeed.rotation = this.lerp(this.currentSpeed.rotation, this.targetSpeed.rotation, 0.01);
 
         this.boat.rotation.y += this.currentSpeed.rotation;
         this.boat.translateZ(this.currentSpeed.velocity);
