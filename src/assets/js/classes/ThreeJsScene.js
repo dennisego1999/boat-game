@@ -268,7 +268,7 @@ export default class ThreeJsScene {
         this.createSmokeEmitter();
 
         //Add water
-        const waterGeometry = new THREE.PlaneGeometry( 2048, 2048, 512, 512 );
+        const waterGeometry = new THREE.PlaneGeometry( 999999, 999999, 512, 512 );
         this.water = new Water(
             waterGeometry,
             {
