@@ -10,7 +10,7 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import System, {Rate, Span, SpriteRenderer} from 'three-nebula';
 import {ref} from 'vue';
-import {MathUtils} from "three";
+import {MathUtils} from 'three';
 
 export default class GameScene {
 
