@@ -10,7 +10,7 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import System, {Rate, Span, SpriteRenderer} from 'three-nebula';
 import {ref} from 'vue';
-import {MathUtils} from 'three';
+import {AxesHelper, Box3Helper, BoxHelper, MathUtils, Object3D} from 'three';
 
 export default class GameScene {
 
@@ -22,6 +22,7 @@ export default class GameScene {
         this.then = null;
         this.scene = null;
         this.camera = null;
+        this.cameraObject = null;
         this.renderer = null;
         this.controls = null;
         this.flash = null;
@@ -257,11 +258,12 @@ export default class GameScene {
         //Offset water
         this.water.material.uniforms[ 'time' ].value -= 1.0 / 60.0;
 
-        //Stick camera position and rotation to boat
-        this.camera.position.set(this.boat.position.x, this.boat.position.y + 9, this.boat.position.z + 32);
-
         //Update boat
         this.updateBoatAndLostBoxes();
+
+        //Update the camera parent objects rotation and position
+        this.cameraObject.position.set(this.boat.position.x, this.boat.position.y, this.boat.position.z);
+        this.cameraObject.rotation.set(this.boat.rotation.x, this.boat.rotation.y + Math.PI, this.boat.rotation.z);
 
         //Render
         this.renderer.render(this.scene, this.camera);
@@ -293,8 +295,14 @@ export default class GameScene {
         this.camera.updateProjectionMatrix();
 
         //Setup camera
-        this.camera.position.set(0, 10, 0);
-        this.scene.add(this.camera);
+        this.camera.position.set(0, 10, 32);
+
+        //Add camera to camera object
+        this.cameraObject = new Object3D();
+        this.cameraObject.add(this.camera);
+
+        //Ad to scene
+        this.scene.add(this.cameraObject);
 
     }
 
