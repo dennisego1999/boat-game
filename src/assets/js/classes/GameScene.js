@@ -593,6 +593,9 @@ export default class GameScene {
                 //Set moving state
                 this.isMoving = false;
 
+                //Reset direction to forward
+                this.direction = 'forward';
+
                 //Set normal rate
                 this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.normalRate));
 
