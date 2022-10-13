@@ -17,6 +17,7 @@ export default class GameScene {
     constructor(gameIsWon, amountOfBoxesRecovered, totalAmountOfLostBoxes) {
 
         //Set variables
+        this.direction = 'forward';
         this.isLoaded = ref(false);
         this.fps = 1000 / 30;
         this.then = null;
@@ -86,19 +87,19 @@ export default class GameScene {
             },
             'q': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.003
+                func: () => this.direction === 'forward' ? this.targetSpeed.rotation = 0.003 : this.targetSpeed.rotation = -0.003
             },
             'ArrowLeft': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = 0.003
+                func: () => this.direction === 'forward' ? this.targetSpeed.rotation = 0.003 : this.targetSpeed.rotation = -0.003
             },
             'd': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.003
+                func: () => this.direction === 'forward' ? this.targetSpeed.rotation = -0.003 : this.targetSpeed.rotation = 0.003
             },
             'ArrowRight': {
                 pressed: false,
-                func: () => this.targetSpeed.rotation = -0.003
+                func: () => this.direction === 'forward' ? this.targetSpeed.rotation = -0.003 : this.targetSpeed.rotation = 0.003
             },
 
         };
@@ -615,6 +616,10 @@ export default class GameScene {
             this.particleSystem.emitters.forEach(emitter => emitter.setRate(this.highRate));
 
         }
+
+        //Set the direction
+        if(event.key === 'z' || event.key === 'ArrowUp') this.direction = 'forward';
+        if(event.key === 's' || event.key === 'ArrowDown') this.direction = 'backward';
 
         //Call pressed key function
         Object.keys(this.boatMovementController).forEach(key => {
