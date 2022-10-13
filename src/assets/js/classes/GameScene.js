@@ -655,6 +655,9 @@ export default class GameScene {
         this.boat.position.set(0, 0, 0);
         this.boat.rotation.y = Math.PI;
 
+        //Reset direction to forward
+        this.direction = 'forward';
+
         //Generate new randomly placed boxes
         this.generateRandomlyPlacedBoxes();
 
