@@ -58,6 +58,7 @@
 <script>
 import {defineComponent, nextTick, watch, ref, onBeforeUnmount} from 'vue';
 import GameScene from "@/assets/js/classes/GameScene";
+import isMobile from "ismobilejs";
 
 export default defineComponent({
     setup() {
@@ -72,6 +73,8 @@ export default defineComponent({
         const isExperiencedLaunched = ref(false);
         const backgroundMusic = ref(null);
         const ambienceSound = ref(null);
+        const isIphone = isMobile(navigator.userAgent).apple.phone;
+        const isIpad = (/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1) || (isMobile(navigator.userAgent).apple.tablet);
 
         function playAudio() {
 
@@ -93,13 +96,64 @@ export default defineComponent({
 
         }
 
+        function preventPullToRefreshForIOS() {
+            window.addEventListener('touchmove', checkTouchYCoords,{passive:false});
+        }
+
+        function checkTouchYCoords(event) {
+
+            //Prevent default when user scrolls up or down
+            if (window.scrollY <= 0) {
+                event.preventDefault();
+                return false;
+            }
+
+        }
+
+        function clearCursorClasses() {
+
+            if(document.body.classList.contains('grab')) {
+                document.body.classList.remove('grab')
+            }
+
+            if(document.body.classList.contains('grabbing')) {
+                document.body.classList.remove('grabbing')
+            }
+
+        }
+
+        function setGrabbingCursor() {
+
+            if(document.body.classList.contains('grab')) {
+                document.body.classList.remove('grab')
+            }
+
+            document.body.classList.add('grabbing')
+
+        }
+
+        function setGrabCursor() {
+
+            if(document.body.classList.contains('grabbing')) {
+                document.body.classList.remove('grabbing')
+            }
+
+            document.body.classList.add('grab')
+
+        }
+
        nextTick(() => {
+
+           //Set cursor
+           setGrabCursor();
 
            //Create scene
            scene = new GameScene(gameIsWon, amountOfBoxesRecovered, totalAmountOfLostBoxes);
 
            //Add event listeners
            window.addEventListener('resize', () => scene.resizeScene.call(scene));
+           document.body.addEventListener('pointerdown', setGrabbingCursor);
+           document.body.addEventListener('pointerup', setGrabCursor);
            window.addEventListener('keydown', (event) => {
 
                if(!isExperiencedLaunched.value || gameIsWon.value) {
@@ -120,6 +174,11 @@ export default defineComponent({
                scene.onKeyUp.call(scene, event)
 
            });
+
+           //Prevent pull to refresh for IOS mobile
+           if(isIphone || isIpad) {
+               preventPullToRefreshForIOS();
+           }
 
            watch(scene.isLoaded, (newValue, oldValue) => {
 
@@ -151,6 +210,12 @@ export default defineComponent({
             window.removeEventListener('resize', () => scene.resizeScene.call(scene));
             window.removeEventListener('keydown', () => scene.onKeyDown.call(scene));
             window.removeEventListener('keyup', () => scene.onKeyUp.call(scene));
+            window.removeEventListener('touchmove', checkTouchYCoords);
+            document.body.removeEventListener('pointerdown', setGrabbingCursor);
+            document.body.removeEventListener('pointerup', setGrabCursor);
+
+            //Clear cursor classes
+            clearCursorClasses();
 
         });
 
