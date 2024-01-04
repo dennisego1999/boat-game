@@ -1,16 +1,7 @@
-<template>
-
-    <my-scene/>
-
-</template>
-
-<script>
-import {defineComponent} from 'vue';
-import MyScene from '@/components/MyScene';
-
-export default defineComponent({
-    components: {
-        MyScene,
-    },
-});
+<script setup>
+import Game from '@/components/Game.vue';
 </script>
+
+<template>
+	<game />
+</template>

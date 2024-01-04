@@ -1,6 +1,5 @@
 const getWaveVertexShader = () => {
-
-    return `
+	return `
         uniform mat4 textureMatrix
         uniform float time;
         uniform vec4 waveA;
@@ -42,12 +41,10 @@ const getWaveVertexShader = () => {
             gl_Position = projectionMatrix * modelViewMatrix * vec4( p.x, p.y, p.z, 1.0);
         }
         `;
-
-}
+};
 
 const getWaveFragmentShader = () => {
-
-    return `
+	return `
         uniform sampler2D mirrorSampler;
             uniform float alpha;
             uniform float time;
@@ -107,7 +104,6 @@ const getWaveFragmentShader = () => {
                 gl_FragColor = vec4( outgoingLight, alpha );
             }
     `;
+};
 
-}
-
-export {getWaveVertexShader, getWaveFragmentShader};
+export { getWaveVertexShader, getWaveFragmentShader };

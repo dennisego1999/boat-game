@@ -3,19 +3,17 @@ const _changeEvent = { type: 'change' };
 const _PI_2 = Math.PI / 2;
 
 class PointerLockControlsMobile extends EventDispatcher {
-
 	constructor(camera, domElement) {
-
 		super();
 
 		this.currentMovement = {
-			x: 0, 
-			y: 0,
+			x: 0,
+			y: 0
 		};
 
 		this.targetMovement = {
-			x: 0, 
-			y: 0,
+			x: 0,
+			y: 0
 		};
 
 		this.minPolarAngle = 0; // radians
@@ -33,77 +31,64 @@ class PointerLockControlsMobile extends EventDispatcher {
 			domElement = document.body;
 		}
 
-		this.onTouchMove = function(e) {
-
+		this.onTouchMove = function (e) {
 			let touch = e.touches[0];
-	
-			if (!touch) {
 
-				console.log('no touch')
-				
+			if (!touch) {
+				console.log('no touch');
+
 				//Set target to 0 when user stops dragging and limit between 1 and -1
 				scope.targetMovement = {
 					x: 0,
-					y: 0,
+					y: 0
 				};
 
 				return;
-	
 			}
-	
+
 			const movementX = scope.previousTouch ? touch.pageX - scope.previousTouch.pageX : 0;
 			const movementY = scope.previousTouch ? touch.pageY - scope.previousTouch.pageY : 0;
-	
+
 			//Set target position
 			scope.targetMovement = {
 				x: movementX,
-				y: movementY,
+				y: movementY
 			};
-	
+
 			scope.previousTouch = touch;
-		}
-		
-		this.onTouchEnd = function() {
+		};
+
+		this.onTouchEnd = function () {
 			scope.previousTouch = undefined;
-		}
+		};
 
-		this.updateCamera = function() {
-
-	
+		this.updateCamera = function () {
 			const multiplier = 0.002;
-	
+
 			scope.euler.setFromQuaternion(scope.camera.quaternion);
 			scope.euler.y += scope.currentMovement.x * multiplier;
 			scope.euler.x += scope.currentMovement.y * multiplier;
 			scope.euler.x = Math.max(_PI_2 - scope.maxPolarAngle, Math.min(_PI_2 - scope.minPolarAngle, scope.euler.x));
 			scope.camera.quaternion.setFromEuler(scope.euler);
-	
-			scope.dispatchEvent(_changeEvent);
-	
-		}
 
-		this.connect = function() {
+			scope.dispatchEvent(_changeEvent);
+		};
+
+		this.connect = function () {
 			scope.domElement.addEventListener('touchmove', scope.onTouchMove, false);
 			scope.domElement.addEventListener('touchend', scope.onTouchEnd, false);
-		}
+		};
 
-		this.disconnect = function() {
+		this.disconnect = function () {
 			scope.domElement.removeEventListener('touchmove', scope.onTouchMove, false);
 			scope.domElement.removeEventListener('touchend', scope.onTouchEnd, false);
-		}
+		};
 
-		this.dispose = function() {
+		this.dispose = function () {
 			scope.disconnect();
-		}
+		};
 
 		this.connect();
-
 	}
 }
 export { PointerLockControlsMobile };
-
-
-
-
-
-

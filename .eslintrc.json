@@ -1,0 +1,62 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "amd": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:vue/vue3-essential",
+    "plugin:prettier/recommended",
+    "prettier"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-mixed-spaces-and-tabs": 0,
+    "indent": [
+      "error",
+      "tab"
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "vue/html-quotes": [ "error", "double", { "avoidEscape": false } ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "vue/multi-word-component-names": ["off"],
+    "prettier/prettier": ["error", {
+      "printWidth": 120,
+      "useTabs": true,
+      "singleQuote": true,
+      "bracketSameLine": false,
+      "trailingComma": "none"
+    }]
+  },
+  "globals": {
+    "route": "readonly",
+    "axios": "readonly",
+    "process": "readonly",
+    "Echo": "readonly",
+    "_": "readonly",
+    "emitter": "readonly",
+    "Ziggy": "readonly",
+    "defineEmits": "readonly",
+    "defineProps": "readonly",
+    "defineExpose": "readonly",
+    "defineOptions": "readonly"
+  },
+  "ignorePatterns": [
+    "vendor/*",
+    "public/"
+  ]
+}
