@@ -29,6 +29,7 @@ export default class GameScene {
 		this.sky = null;
 		this.boat = null;
 		this.box = null;
+		this.isMoving = false;
 		this.floatingBoxes = [];
 		this.gameIsWon = gameIsWon;
 		this.amountOfBoxesRecovered = amountOfBoxesRecovered;
