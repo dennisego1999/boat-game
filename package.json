@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@babel/runtime": "^7.23.7",
     "dat.gui": "^0.7.9",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",

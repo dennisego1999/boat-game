@@ -8,7 +8,7 @@ import { PointerLockControls } from '@/assets/js/util/PointerLockControls';
 import { PointerLockControlsMobile } from '@/assets/js/util/PointerLockControlsMobile';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
-// import System, { Rate, Span, SpriteRenderer } from 'three-nebula';
+import System, { Rate, Span, SpriteRenderer } from 'three-nebula';
 import { ref } from 'vue';
 import { MathUtils, Object3D } from 'three';
 
@@ -43,8 +43,8 @@ export default class GameScene {
 		this.isTablet = isMobile(navigator.userAgent).tablet;
 		this.gltfLoader = new GLTFLoader();
 		this.dracoLoader = new DRACOLoader();
-		// this.highRate = new Rate(new Span(2, 6), new Span(0.05, 0.009));
-		// this.normalRate = new Rate(new Span(1, 5), new Span(0.5, 0.02));
+		this.highRate = new Rate(new Span(2, 6), new Span(0.05, 0.009));
+		this.normalRate = new Rate(new Span(1, 5), new Span(0.5, 0.02));
 		this.gltfLoader.setDRACOLoader(this.dracoLoader);
 		this.sunParameters = {
 			elevation: 1.5,
@@ -383,16 +383,16 @@ export default class GameScene {
 	}
 
 	createSmokeEmitter() {
-		// System.fromJSONAsync(ParticleSystemData, THREE).then((system) => {
-		// 	this.particleSystem = system;
-		// 	this.emitterRenderer = new SpriteRenderer(this.scene, THREE);
-		// 	this.particleSystem.addRenderer(this.emitterRenderer);
-		//
-		// 	//Set normal rate
-		// 	this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.normalRate));
-		//
-		// 	window.particleSystem = this.particleSystem;
-		// });
+		System.fromJSONAsync(ParticleSystemData, THREE).then((system) => {
+			this.particleSystem = system;
+			this.emitterRenderer = new SpriteRenderer(this.scene, THREE);
+			this.particleSystem.addRenderer(this.emitterRenderer);
+
+			//Set normal rate
+			this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.normalRate));
+
+			window.particleSystem = this.particleSystem;
+		});
 	}
 
 	getWaveInfo(x, z, time) {
