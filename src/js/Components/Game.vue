@@ -1,5 +1,7 @@
 <script setup>
 import { watch, ref, onBeforeUnmount, onMounted } from 'vue';
+import PulseLoader from '@/Components/PulseLoader.vue';
+import Modal from '@/Components/Modal.vue';
 import Game from '@/Classes/Game';
 import isMobile from 'ismobilejs';
 
@@ -13,15 +15,19 @@ const isIpad =
 	isMobile(navigator.userAgent).apple.tablet;
 
 // Define functions
+function startGame() {
+	// Play audio
+	playAudio();
+
+	// set ref
+	isExperiencedLaunched.value = true;
+}
 function playAudio() {
 	// Audio function
 	backgroundMusic.value.muted = false;
 	backgroundMusic.value.play();
 	ambienceSound.value.muted = false;
 	ambienceSound.value.play();
-
-	// Set experience state
-	isExperiencedLaunched.value = true;
 }
 
 function restartGame() {
@@ -41,29 +47,29 @@ function checkTouchYCoords(event) {
 }
 
 function clearCursorClasses() {
-	if (document.body.classList.contains('grab')) {
-		document.body.classList.remove('grab');
+	if (document.body.classList.contains('cursor-grab')) {
+		document.body.classList.remove('cursor-grab');
 	}
 
-	if (document.body.classList.contains('grabbing')) {
-		document.body.classList.remove('grabbing');
+	if (document.body.classList.contains('cursor-grabbing')) {
+		document.body.classList.remove('cursor-grabbing');
 	}
 }
 
 function setGrabbingCursor() {
-	if (document.body.classList.contains('grab')) {
-		document.body.classList.remove('grab');
+	if (document.body.classList.contains('cursor-grab')) {
+		document.body.classList.remove('cursor-grab');
 	}
 
-	document.body.classList.add('grabbing');
+	document.body.classList.add('cursor-grabbing');
 }
 
 function setGrabCursor() {
-	if (document.body.classList.contains('grabbing')) {
-		document.body.classList.remove('grabbing');
+	if (document.body.classList.contains('cursor-grabbing')) {
+		document.body.classList.remove('cursor-grabbing');
 	}
 
-	document.body.classList.add('grab');
+	document.body.classList.add('cursor-grab');
 }
 
 // Life cycles
@@ -128,20 +134,14 @@ onBeforeUnmount(() => {
 
 <template>
 	<div class="relative">
-		<div
-			v-if="Game.isVictory.value"
-			@click="restartGame"
-			class="absolute left-[20px] top-[20px] z-[20] rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
-		>
-			Restart game
-		</div>
+		<canvas id="game-canvas" class="h-[100dvh] w-screen" />
 
 		<Transition name="fade" mode="out-in">
 			<div
 				v-if="Game.isLoaded.value && isExperiencedLaunched"
-				class="absolute right-[20px] top-[20px] z-[10] flex items-center justify-center gap-[5px] text-white"
+				class="absolute right-4 top-4 z-10 flex items-center justify-center gap-2 text-white"
 			>
-				<h2 class="font-weight-bold text-uppercase">Boxes recovered:</h2>
+				<h2 class="font-bold uppercase">Boxes recovered:</h2>
 
 				<div class="flex items-center justify-between">
 					<p class="m-0">{{ Game.amountOfBoxesRecovered.value }}</p>
@@ -151,31 +151,36 @@ onBeforeUnmount(() => {
 			</div>
 		</Transition>
 
-		<Transition name="fade" mode="out-in">
-			<div v-if="!isExperiencedLaunched" class="absolute inset-0 h-screen w-screen">
-				<span v-if="!Game.isLoaded.value" />
-
-				<Transition name="fade" mode="out-in">
-					<div
-						v-if="Game.isLoaded.value && !isExperiencedLaunched"
-						class="experience-button flex flex-col items-center justify-center gap-[5px]"
-					>
-						<h2 class="text-white">Collect all lost cargo!</h2>
-
-						<div class="mb-2 h-[1px] w-full bg-white" />
-
-						<div
-							@click="playAudio"
-							class="rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
-						>
-							Start the experience
-						</div>
-					</div>
-				</Transition>
+		<Transition name="fade">
+			<div
+				v-if="!Game.isLoaded.value"
+				class="absolute z-50 flex h-[100dvh] w-screen items-center justify-center bg-blue-500"
+			>
+				<PulseLoader class="h-12 w-12 text-white" />
 			</div>
 		</Transition>
 
-		<canvas id="game-canvas" class="h-[100dvh] w-screen" />
+		<Modal :show="Game.isLoaded.value && !isExperiencedLaunched" max-width="md" @close="startGame">
+			<div class="flex flex-col items-center justify-center gap-4">
+				<h2 class="text-white">Collect all lost cargo!</h2>
+
+				<div
+					@click="startGame"
+					class="rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
+				>
+					Start the experience
+				</div>
+			</div>
+		</Modal>
+
+		<Modal :show="Game.isVictory.value" @close="restartGame" max-width="md">
+			<div
+				@click="restartGame"
+				class="rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
+			>
+				Restart game
+			</div>
+		</Modal>
 
 		<audio src="/audio/ship-ocean-waves-wind-wood-creaks.mp3" ref="backgroundMusic" muted autoplay loop />
 		<audio src="/audio/background-music.mp3" ref="ambienceSound" muted autoplay loop />
