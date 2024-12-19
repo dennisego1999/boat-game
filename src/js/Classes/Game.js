@@ -100,7 +100,7 @@ class Game extends ThreeManager {
 		// Initiate three.js
 		this.initThree(canvasId);
 
-		//Load models
+		// Load models
 		await this.loadModels();
 
 		// Set render action
@@ -145,13 +145,13 @@ class Game extends ThreeManager {
 	}
 
 	loadModels() {
-		//Set loader 1
+		// Set loader 1
 		const loader1 = new Promise((resolve, reject) => {
 			// Load the boat
 			this.gltfLoader.load(
 				'/js/models/boat/boat.gltf',
 				(gltf) => {
-					//Resolve
+					// Resolve
 					resolve(gltf);
 				},
 				() => {},
@@ -159,13 +159,13 @@ class Game extends ThreeManager {
 			);
 		});
 
-		//Set loader 2
+		// Set loader 2
 		const loader2 = new Promise((resolve, reject) => {
 			// Load the boat
 			this.gltfLoader.load(
 				'/js/models/box/box.gltf',
 				(gltf) => {
-					//Resolve
+					// Resolve
 					resolve(gltf);
 				},
 				() => {},
@@ -174,32 +174,32 @@ class Game extends ThreeManager {
 		});
 
 		return Promise.all([loader1, loader2]).then((values) => {
-			//Set boat variable
+			// Set boat variable
 			this.boat = getChildren(values[0].scene, ['Sketchfab_model'], 'exact')[0].children[0];
 			this.boat.scale.set(0.04, 0.04, 0.04);
 			this.boat.children[0].position.y = 10;
 			this.boat.rotation.y = Math.PI;
 
-			//Add the boat to the scene
+			// Add the boat to the scene
 			this.scene.add(this.boat);
 
-			//Set box variable
+			// Set box variable
 			this.box = getChildren(values[1].scene, ['Sketchfab_model'], 'exact')[0].children[0];
 			this.box.scale.set(0.02, 0.02, 0.02);
 
-			//Generate x amount of randomly places floating boxes
+			// Generate x amount of randomly places floating boxes
 			this.generateRandomlyPlacedBoxes();
 
-			//Set load state
+			// Set load state
 			this.isLoaded.value = true;
 		});
 	}
 
 	setupSceneObjects() {
-		//Create smoke emitter
+		// Create smoke emitter
 		this.createSmokeEmitter();
 
-		//Add water
+		// Add water
 		const waterGeometry = new THREE.PlaneGeometry(8192, 8192, 512, 512);
 		this.water = new Water(waterGeometry, {
 			textureWidth: 512,
@@ -215,7 +215,7 @@ class Game extends ThreeManager {
 		});
 		this.water.rotation.x = -Math.PI / 2;
 
-		//Create waves
+		// Create waves
 		this.water.material.onBeforeCompile = (shader) => {
 			shader.uniforms.waveA = {
 				value: [
@@ -245,53 +245,53 @@ class Game extends ThreeManager {
 			shader.fragmentShader = document.getElementById('fragmentShader').textContent;
 		};
 
-		//Set water uniforms
+		// Set water uniforms
 		const waterUniforms = this.water.material.uniforms;
 		waterUniforms['distortionScale'].value = 20;
 		waterUniforms['size'].value = 3.5;
 
-		//Add water to scene
+		// Add water to scene
 		this.scene.add(this.water);
 
-		//Add sky
+		// Add sky
 		this.sky = new Sky();
 		this.sky.scale.setScalar(10000);
 		this.scene.add(this.sky);
 
-		//Set sky uniforms
+		// Set sky uniforms
 		const skyUniforms = this.sky.material.uniforms;
 		skyUniforms['turbidity'].value = 10;
 		skyUniforms['rayleigh'].value = 2;
 		skyUniforms['mieCoefficient'].value = 0.005;
 		skyUniforms['mieDirectionalG'].value = 0.5;
 
-		//Set sun
+		// Set sun
 		this.setSun();
 
-		//Add directional scene light
+		// Add directional scene light
 		const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
 		ambientLight.position.set(0, 1000, -0);
 		this.scene.add(ambientLight);
 	}
 
 	generateRandomlyPlacedBoxes() {
-		let previousRx;
-		let previousRz;
+		let previousRx = null;
+		let previousRz = null;
 
 		for (let i = 0; i < this.totalAmountOfLostBoxes.value; i++) {
 			const randomBox = this.box.clone();
 			this.floatingBoxes.push(randomBox);
 
-			//Set random position
+			// Set random position
 			const rx = MathUtils.randInt(-100, 100);
 			const rz = MathUtils.randInt(-150, -250);
 			randomBox.position.set(rx !== previousRx ? rx : rx + 5, 0, rz !== previousRz ? rz : rz + 5);
 
-			//Set previous variables
+			// Set previous variables
 			previousRx = rx;
 			previousRz = rz;
 
-			//Add to scene
+			// Add to scene
 			this.scene.add(randomBox);
 		}
 	}
@@ -302,7 +302,7 @@ class Game extends ThreeManager {
 			this.emitterRenderer = new SpriteRenderer(this.scene, THREE);
 			this.particleSystem.addRenderer(this.emitterRenderer);
 
-			//Set normal rate
+			// Set normal rate
 			this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.normalRate));
 
 			window.particleSystem = this.particleSystem;
@@ -340,17 +340,17 @@ class Game extends ThreeManager {
 	}
 
 	updateBoatAndLostBoxes() {
-		//Set position
+		// Set position
 		const time = this.water.material.uniforms['time'].value;
 		const boatWaveInfo = this.getWaveInfo(this.boat.position.x, this.boat.position.z, time);
 		this.boat.position.y = boatWaveInfo.position.y;
 
-		//Set rotation
+		// Set rotation
 		const boatEuler = new THREE.Euler().setFromVector3(boatWaveInfo.normal);
 		this.boat.rotation.x = boatEuler.x;
 		this.boat.rotation.z = boatEuler.z;
 
-		//lerp
+		// Lerp
 		this.currentSpeed.velocity = lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
 		this.currentSpeed.rotation = lerp(this.currentSpeed.rotation, this.targetSpeed.rotation, 0.01);
 
@@ -358,25 +358,25 @@ class Game extends ThreeManager {
 		this.boat.translateZ(this.currentSpeed.velocity);
 
 		if (this.isVictory.value) {
-			//Reset movement when game is won
+			// Reset movement when game is won
 			this.targetSpeed.velocity = 0;
 			this.targetSpeed.rotation = 0;
 
-			//Set normal rate
+			// Set normal rate
 			this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.normalRate));
 		}
 
 		if (this.particleSystem) {
-			//Set the position of the emitters
+			// Set the position of the emitters
 			this.particleSystem.emitters.forEach((emitter) =>
 				emitter.position.set(this.boat.position.x, this.boat.position.y + 11.5, this.boat.position.z)
 			);
 
-			//Update the emitters
+			// Update the emitters
 			this.particleSystem.update();
 		}
 
-		//Check if boat collides with boxes
+		// Check if boat collides with boxes
 		this.floatingBoxes.forEach((box) => {
 			const boxWaveInfo = this.getWaveInfo(box.position.x, box.position.z, time);
 			box.position.y = boxWaveInfo.position.y;
@@ -386,13 +386,13 @@ class Game extends ThreeManager {
 			box.rotation.z = boxEuler.z;
 
 			if (isColliding(this.boat, box)) {
-				//Remove box from scene
+				// Remove box from scene
 				this.scene.remove(box);
 
-				//Increase the amount of recovered boxes
+				// Increase the amount of recovered boxes
 				this.amountOfBoxesRecovered.value++;
 
-				//Clean up array
+				// Clean up array
 				this.floatingBoxes = this.floatingBoxes.filter((boxFromArray) => box !== boxFromArray);
 			}
 		});
@@ -405,7 +405,7 @@ class Game extends ThreeManager {
 		const phi = THREE.MathUtils.degToRad(90 - this.sunParameters.elevation);
 		const theta = THREE.MathUtils.degToRad(this.sunParameters.azimuth);
 
-		//Add sun
+		// Add sun
 		this.sun = new THREE.Vector3();
 		this.sun.setFromSphericalCoords(1, phi, theta);
 
@@ -437,24 +437,24 @@ class Game extends ThreeManager {
 
 	onKeyUp(event) {
 		if (this.boatMovementController[event.key]) {
-			//Reset specific button
+			// Reset specific button
 			this.boatMovementController[event.key].pressed = false;
 
-			//Stop the boat
+			// Stop the boat
 			this.stopBoat(event.key);
 
-			//Check if user 0 keys are pressed
+			// Check if user 0 keys are pressed
 			const isBoatStationary =
 				Object.keys(this.boatMovementController).filter((key) => this.boatMovementController[key].pressed).length === 0;
 
 			if (isBoatStationary) {
-				//Set moving state
+				// Set moving state
 				this.isMoving = false;
 
-				//Reset direction to forward
+				// Reset direction to forward
 				this.direction = 'forward';
 
-				//Set normal rate
+				// Set normal rate
 				this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.normalRate));
 			}
 		}
@@ -462,54 +462,50 @@ class Game extends ThreeManager {
 
 	onKeyDown(event) {
 		if (this.boatMovementController[event.key]) {
-			//Set pressed key state
+			// Set pressed key state
 			this.boatMovementController[event.key].pressed = true;
 
-			//Set state
+			// Set state
 			this.isMoving = true;
 
-			//Set higher rate
+			// Set higher rate
 			this.particleSystem.emitters.forEach((emitter) => emitter.setRate(this.highRate));
 		}
 
-		//Set the direction
+		// Set the direction
 		if (event.key === 'z' || event.key === 'ArrowUp') this.direction = 'forward';
 		if (event.key === 's' || event.key === 'ArrowDown') this.direction = 'backward';
 
-		//Call pressed key function
+		// Call pressed key function
 		Object.keys(this.boatMovementController).forEach((key) => {
 			this.boatMovementController[key].pressed && this.boatMovementController[key].func();
 		});
 	}
 
 	resize() {
-		//Set correct aspect
+		// Set correct aspect
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
 
-		//Set canvas size again
+		// Set canvas size again
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 	}
 
-	getAnimateFrameId() {
-		return this.animateFrameId;
-	}
-
 	reset() {
-		//Reset amount of recovered boxes
+		// Reset amount of recovered boxes
 		this.amountOfBoxesRecovered.value = 0;
 
-		//Reset boat position and rotation
+		// Reset boat position and rotation
 		this.boat.position.set(0, 0, 0);
 		this.boat.rotation.y = Math.PI;
 
-		//Reset direction to forward
+		// Reset direction to forward
 		this.direction = 'forward';
 
-		//Generate new randomly placed boxes
+		// Generate new randomly placed boxes
 		this.generateRandomlyPlacedBoxes();
 
-		//Reset state
+		// Reset state
 		this.isVictory.value = false;
 	}
 }

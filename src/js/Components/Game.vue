@@ -114,7 +114,7 @@ onMounted(() => {
 	// Watch
 	watch(Game.amountOfBoxesRecovered, (newValue, oldValue) => {
 		if (oldValue !== newValue) {
-			//Set game state
+			// Set game state
 			Game.isVictory.value = newValue === Game.totalAmountOfLostBoxes.value;
 		}
 	});
