@@ -1,7 +1,7 @@
 {
   "env": {
     "browser": true,
-    "es2021": true,
+    "es2024": true,
     "amd": true
   },
   "extends": [
@@ -15,11 +15,14 @@
     "sourceType": "module"
   },
   "rules": {
+    "prettier/prettier": ["error", {
+      "printWidth": 120,
+      "useTabs": true,
+      "singleQuote": true,
+      "bracketSameLine": false,
+      "trailingComma": "none"
+    }],
     "no-mixed-spaces-and-tabs": 0,
-    "indent": [
-      "error",
-      "tab"
-    ],
     "linebreak-style": [
       "error",
       "unix"
@@ -28,21 +31,40 @@
       "error",
       "single"
     ],
-    "vue/html-quotes": [ "error", "double", { "avoidEscape": false } ],
     "semi": [
       "error",
       "always"
     ],
+    "vue/attribute-hyphenation": ["error", "always"],
+    "vue/component-name-in-template-casing": ["error", "PascalCase", {
+      "registeredComponentsOnly": false,
+      "ignores": []
+    }],
+    "vue/component-tags-order": ["error", {
+      "order": ["script", "template", "style"]
+    }],
+    "vue/html-self-closing": ["error", {
+      "html": {
+        "void": "any",
+        "normal": "always",
+        "component": "always"
+      },
+      "svg": "always",
+      "math": "always"
+    }],
+    "vue/html-quotes": [ "error", "double", { "avoidEscape": false } ],
+    "vue/multiline-html-element-content-newline": ["error", {
+      "ignoreWhenEmpty": true,
+      "ignores": ["pre", "textarea"],
+      "allowEmptyLines": false
+    }],
     "vue/multi-word-component-names": ["off"],
-    "prettier/prettier": ["error", {
-      "printWidth": 120,
-      "useTabs": true,
-      "singleQuote": true,
-      "bracketSameLine": false,
-      "trailingComma": "none"
-    }]
+    "vue/prop-name-casing": ["error", "camelCase"],
+    "vue/v-bind-style": ["error", "shorthand"]
   },
   "globals": {
+    "Livewire": "readonly",
+    "FilamentNotification": "readonly",
     "route": "readonly",
     "axios": "readonly",
     "process": "readonly",

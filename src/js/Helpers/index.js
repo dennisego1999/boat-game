@@ -1,3 +1,18 @@
+export const lerp = (value1, value2, amount) => {
+	//Set amount
+	amount = amount < 0 ? 0 : amount;
+	amount = amount > 1 ? 1 : amount;
+
+	return value1 + (value2 - value1) * amount;
+};
+
+export const isColliding = (obj1, obj2) => {
+	//Set factor => distance from center of boat
+	const factor = 14;
+
+	return Math.abs(obj1.position.x - obj2.position.x) < factor && Math.abs(obj1.position.z - obj2.position.z) < factor;
+};
+
 // Flatten array of children > easier to filter
 export const flattenChildren = (array, d = 1) => {
 	return d > 0

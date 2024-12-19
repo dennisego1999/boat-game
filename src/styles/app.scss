@@ -2,9 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import 'variables';
-@import 'components/loader/loader';
-@import 'components/cursor/cursor';
+@import "global/transitions";
 
 html {
   scroll-behavior: smooth;

@@ -1,29 +1,22 @@
-import * as THREE from 'three';
-import isMobile from 'ismobilejs';
-import ParticleSystemData from '@/assets/js/particle-system/particle-system.json';
-import { getChildren } from '@/assets/js/util/gltfHelpers';
 import { Sky } from 'three/examples/jsm/objects/Sky';
+import { ref } from 'vue';
 import { Water } from 'three/examples/jsm/objects/Water';
-import { PointerLockControls } from '@/assets/js/util/PointerLockControls';
-import { PointerLockControlsMobile } from '@/assets/js/util/PointerLockControlsMobile';
+import { MathUtils } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader';
+import { lerp, isColliding, getChildren } from '@/Helpers';
 import System, { Rate, Span, SpriteRenderer } from 'three-nebula';
-import { ref } from 'vue';
-import { MathUtils, Object3D } from 'three';
+import ParticleSystemData from '@/Data/ParticleSystem.json';
+import ThreeManager from '@/Classes/ThreeManager.js';
+import * as THREE from 'three';
+import isMobile from 'ismobilejs';
 
-export default class GameScene {
-	constructor(gameIsWon, amountOfBoxesRecovered, totalAmountOfLostBoxes) {
-		//Set variables
+class Game extends ThreeManager {
+	constructor() {
+		super();
+
 		this.direction = 'forward';
 		this.isLoaded = ref(false);
-		this.fps = 1000 / 30;
-		this.then = null;
-		this.scene = null;
-		this.camera = null;
-		this.cameraObject = null;
-		this.renderer = null;
-		this.controls = null;
 		this.water = null;
 		this.sun = null;
 		this.sky = null;
@@ -31,12 +24,11 @@ export default class GameScene {
 		this.box = null;
 		this.isMoving = false;
 		this.floatingBoxes = [];
-		this.gameIsWon = gameIsWon;
-		this.amountOfBoxesRecovered = amountOfBoxesRecovered;
-		this.totalAmountOfLostBoxes = totalAmountOfLostBoxes;
+		this.isVictory = ref(false);
+		this.amountOfBoxesRecovered = ref(0);
+		this.totalAmountOfLostBoxes = ref(10);
 		this.particleSystem = null;
 		this.emitterRenderer = null;
-		this.canvas = document.querySelector('#three-js-container > canvas');
 		this.isIpad =
 			(/Macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints && navigator.maxTouchPoints > 1) ||
 			isMobile(navigator.userAgent).apple.tablet;
@@ -102,9 +94,54 @@ export default class GameScene {
 					this.direction === 'forward' ? (this.targetSpeed.rotation = -0.003) : (this.targetSpeed.rotation = 0.003)
 			}
 		};
+	}
 
-		//Setup scene
-		this.setupScene();
+	async init(canvasId) {
+		// Initiate three.js
+		this.initThree(canvasId);
+
+		//Load models
+		await this.loadModels();
+
+		// Set render action
+		this.setRenderAction(() => {
+			const isDesktop = !this.isPhone && !this.isTablet && !this.isIpad;
+			const hasReachedLimits = this.controls.targetMovement >= 1 || this.controls.targetMovement <= -1;
+
+			if (
+				(isDesktop && (hasReachedLimits || !this.controls.press)) ||
+				(!isDesktop && (hasReachedLimits || !this.controls.previousTouch))
+			) {
+				// Set target to 0 when user stops dragging and limit between 1 and -1
+				this.controls.targetMovement = {
+					x: 0,
+					y: 0
+				};
+			}
+
+			// Lerp to target euler
+			this.controls.currentMovement.x = lerp(this.controls.currentMovement.x, this.controls.targetMovement.x, 0.1);
+			this.controls.currentMovement.y = lerp(this.controls.currentMovement.y, this.controls.targetMovement.y, 0.1);
+
+			// Set camera
+			this.controls.updateCamera();
+
+			// Offset water
+			this.water.material.uniforms['time'].value -= 1.0 / 60.0;
+
+			// Update boat
+			this.updateBoatAndLostBoxes();
+
+			// Update the camera parent objects rotation and position
+			this.cameraObject.position.set(this.boat.position.x, this.boat.position.y, this.boat.position.z);
+			this.cameraObject.rotation.set(this.boat.rotation.x, this.boat.rotation.y + Math.PI, this.boat.rotation.z);
+		});
+
+		// Setup scene objects
+		this.setupSceneObjects();
+
+		// Start render loop
+		this.animate();
 	}
 
 	loadModels() {
@@ -156,130 +193,6 @@ export default class GameScene {
 			//Set load state
 			this.isLoaded.value = true;
 		});
-	}
-
-	async setupScene() {
-		//Setup scene
-		this.scene = new THREE.Scene();
-
-		//Load models
-		await this.loadModels();
-
-		//Setup renderer
-		this.renderer = new THREE.WebGLRenderer({
-			antialias: true,
-			powerPreference: 'high-performance',
-			canvas: this.canvas,
-			alpha: true
-		});
-		this.renderer.shadowMap.enabled = true;
-		this.renderer.shadowMapSoft = true;
-		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-		//Set size & aspect ratio
-		this.renderer.setSize(window.innerWidth, window.innerHeight);
-		this.renderer.setPixelRatio(window.devicePixelRatio);
-
-		//Setup camera
-		this.setupCamera();
-
-		//Setup scene objects
-		this.setupSceneObjects();
-
-		//Setup controls
-		if (isMobile(navigator.userAgent).phone) {
-			this.controls = new PointerLockControlsMobile(this.camera, document.body);
-		} else {
-			this.controls = new PointerLockControls(this.camera, document.body);
-			this.controls.lock();
-		}
-
-		//Start render loop
-		this.animate.call(this, performance.now());
-	}
-
-	animate() {
-		//Animate request frame loop
-		const now = Date.now();
-		const delta = now - this.then;
-
-		if (delta > this.fps) {
-			this.then = now - (delta % this.fps);
-
-			//Render the frame
-			this.render();
-		}
-
-		//Request a new frame
-		this.animateFrameId = requestAnimationFrame(this.animate.bind(this));
-	}
-
-	render() {
-		const isDesktop = !this.isPhone && !this.isTablet && !this.isIpad;
-		const hasReachedLimits = this.controls.targetMovement >= 1 || this.controls.targetMovement <= -1;
-
-		if (
-			(isDesktop && (hasReachedLimits || !this.controls.press)) ||
-			(!isDesktop && (hasReachedLimits || !this.controls.previousTouch))
-		) {
-			//Set target to 0 when user stops dragging and limit between 1 and -1
-			this.controls.targetMovement = {
-				x: 0,
-				y: 0
-			};
-		}
-
-		//Lerp to target euler
-		this.controls.currentMovement.x = this.lerp(this.controls.currentMovement.x, this.controls.targetMovement.x, 0.1);
-		this.controls.currentMovement.y = this.lerp(this.controls.currentMovement.y, this.controls.targetMovement.y, 0.1);
-
-		//Set camera
-		this.controls.updateCamera();
-
-		//Offset water
-		this.water.material.uniforms['time'].value -= 1.0 / 60.0;
-
-		//Update boat
-		this.updateBoatAndLostBoxes();
-
-		//Update the camera parent objects rotation and position
-		this.cameraObject.position.set(this.boat.position.x, this.boat.position.y, this.boat.position.z);
-		this.cameraObject.rotation.set(this.boat.rotation.x, this.boat.rotation.y + Math.PI, this.boat.rotation.z);
-
-		//Render
-		this.renderer.render(this.scene, this.camera);
-	}
-
-	lerp(value1, value2, amount) {
-		//Set amount
-		amount = amount < 0 ? 0 : amount;
-		amount = amount > 1 ? 1 : amount;
-
-		return value1 + (value2 - value1) * amount;
-	}
-
-	isColliding(obj1, obj2) {
-		//Set factor => distance from center of boat
-		const factor = 14;
-
-		return Math.abs(obj1.position.x - obj2.position.x) < factor && Math.abs(obj1.position.z - obj2.position.z) < factor;
-	}
-
-	setupCamera() {
-		//Set perspective camera
-		this.camera = new THREE.PerspectiveCamera(70, this.canvas.offsetWidth / this.canvas.offsetHeight, 0.1, 800);
-		this.camera.aspect = this.canvas.offsetWidth / this.canvas.offsetHeight;
-		this.camera.updateProjectionMatrix();
-
-		//Setup camera
-		this.camera.position.set(0, 10, 32);
-
-		//Add camera to camera object
-		this.cameraObject = new Object3D();
-		this.cameraObject.add(this.camera);
-
-		//Ad to scene
-		this.scene.add(this.cameraObject);
 	}
 
 	setupSceneObjects() {
@@ -365,7 +278,7 @@ export default class GameScene {
 		let previousRx;
 		let previousRz;
 
-		for (let i = 0; i < this.totalAmountOfLostBoxes; i++) {
+		for (let i = 0; i < this.totalAmountOfLostBoxes.value; i++) {
 			const randomBox = this.box.clone();
 			this.floatingBoxes.push(randomBox);
 
@@ -438,13 +351,13 @@ export default class GameScene {
 		this.boat.rotation.z = boatEuler.z;
 
 		//lerp
-		this.currentSpeed.velocity = this.lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
-		this.currentSpeed.rotation = this.lerp(this.currentSpeed.rotation, this.targetSpeed.rotation, 0.01);
+		this.currentSpeed.velocity = lerp(this.currentSpeed.velocity, this.targetSpeed.velocity, 0.01);
+		this.currentSpeed.rotation = lerp(this.currentSpeed.rotation, this.targetSpeed.rotation, 0.01);
 
 		this.boat.rotation.y += this.currentSpeed.rotation;
 		this.boat.translateZ(this.currentSpeed.velocity);
 
-		if (this.gameIsWon.value) {
+		if (this.isVictory.value) {
 			//Reset movement when game is won
 			this.targetSpeed.velocity = 0;
 			this.targetSpeed.rotation = 0;
@@ -472,7 +385,7 @@ export default class GameScene {
 			box.rotation.x = boxEuler.x;
 			box.rotation.z = boxEuler.z;
 
-			if (this.isColliding(this.boat, box)) {
+			if (isColliding(this.boat, box)) {
 				//Remove box from scene
 				this.scene.remove(box);
 
@@ -569,7 +482,7 @@ export default class GameScene {
 		});
 	}
 
-	resizeScene() {
+	resize() {
 		//Set correct aspect
 		this.camera.aspect = window.innerWidth / window.innerHeight;
 		this.camera.updateProjectionMatrix();
@@ -582,7 +495,7 @@ export default class GameScene {
 		return this.animateFrameId;
 	}
 
-	resetGame() {
+	reset() {
 		//Reset amount of recovered boxes
 		this.amountOfBoxesRecovered.value = 0;
 
@@ -597,6 +510,8 @@ export default class GameScene {
 		this.generateRandomlyPlacedBoxes();
 
 		//Reset state
-		this.gameIsWon.value = false;
+		this.isVictory.value = false;
 	}
 }
+
+export default new Game();
