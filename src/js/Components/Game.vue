@@ -2,6 +2,7 @@
 import { watch, ref, onBeforeUnmount, onMounted } from 'vue';
 import PulseLoader from '@/Components/PulseLoader.vue';
 import Modal from '@/Components/Modal.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 import Game from '@/Classes/Game';
 import isMobile from 'ismobilejs';
 
@@ -72,6 +73,24 @@ function setGrabCursor() {
 	document.body.classList.add('cursor-grab');
 }
 
+function onKeyDown(event) {
+	if (!isExperiencedLaunched.value || Game.isVictory.value) {
+		return;
+	}
+
+	// Call func
+	Game.onKeyDown.call(Game, event);
+}
+
+function onKeyUp(event) {
+	if (!isExperiencedLaunched.value || Game.isVictory.value) {
+		return;
+	}
+
+	// Call func
+	Game.onKeyUp.call(Game, event);
+}
+
 // Life cycles
 onMounted(() => {
 	// Set cursor
@@ -84,22 +103,8 @@ onMounted(() => {
 	window.addEventListener('resize', () => Game.resize.call(Game));
 	document.body.addEventListener('pointerdown', setGrabbingCursor);
 	document.body.addEventListener('pointerup', setGrabCursor);
-	window.addEventListener('keydown', (event) => {
-		if (!isExperiencedLaunched.value || Game.isVictory.value) {
-			return;
-		}
-
-		// Call func
-		Game.onKeyDown.call(Game, event);
-	});
-	window.addEventListener('keyup', (event) => {
-		if (!isExperiencedLaunched.value || Game.isVictory.value) {
-			return;
-		}
-
-		// Call func
-		Game.onKeyUp.call(Game, event);
-	});
+	window.addEventListener('keydown', (event) => onKeyDown(event));
+	window.addEventListener('keyup', (event) => onKeyUp(event));
 
 	//Prevent pull to refresh for IOS mobile
 	if (isIphone || isIpad) {
@@ -124,8 +129,8 @@ onBeforeUnmount(() => {
 
 	// Remove event listeners
 	window.removeEventListener('resize', () => Game.resize.call(Game));
-	window.removeEventListener('keydown', () => Game.onKeyDown.call(Game));
-	window.removeEventListener('keyup', () => Game.onKeyUp.call(Game));
+	window.removeEventListener('keydown', (event) => onKeyDown(event));
+	window.removeEventListener('keyup', (event) => onKeyUp(event));
 	window.removeEventListener('touchmove', checkTouchYCoords);
 	document.body.removeEventListener('pointerdown', setGrabbingCursor);
 	document.body.removeEventListener('pointerup', setGrabCursor);
@@ -164,22 +169,12 @@ onBeforeUnmount(() => {
 			<div class="flex flex-col items-center justify-center gap-4">
 				<h2 class="text-white">Collect all lost cargo!</h2>
 
-				<div
-					@click="startGame"
-					class="rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
-				>
-					Start the experience
-				</div>
+				<PrimaryButton @click="startGame"> Start the experience </PrimaryButton>
 			</div>
 		</Modal>
 
 		<Modal :show="Game.isVictory.value" @close="restartGame" max-width="md">
-			<div
-				@click="restartGame"
-				class="rounded border border-white bg-transparent px-4 py-2 font-semibold text-white hover:cursor-pointer hover:text-white"
-			>
-				Restart game
-			</div>
+			<PrimaryButton @click="restartGame"> Restart game </PrimaryButton>
 		</Modal>
 
 		<audio src="/audio/ship-ocean-waves-wind-wood-creaks.mp3" ref="backgroundMusic" muted autoplay loop />
