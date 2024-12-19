@@ -2,15 +2,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { PointerLockControls } from '@/Utils/PointerLockControls.js';
 import { PointerLockControlsMobile } from '@/Utils/PointerLockControlsMobile.js';
-import {
-	ACESFilmicToneMapping,
-	Clock,
-	Object3D,
-	PCFSoftShadowMap,
-	PerspectiveCamera,
-	Scene,
-	WebGLRenderer
-} from 'three';
+import { Clock, Object3D, PCFSoftShadowMap, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 import isMobile from 'ismobilejs';
 
 export default class ThreeManager {
