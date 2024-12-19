@@ -115,7 +115,7 @@ onMounted(() => {
 	watch(Game.amountOfBoxesRecovered, (newValue, oldValue) => {
 		if (oldValue !== newValue) {
 			//Set game state
-			newValue === Game.totalAmountOfLostBoxes ? (Game.isVictory.value = true) : (Game.isVictory.value = false);
+			Game.isVictory.value = newValue === Game.totalAmountOfLostBoxes.value;
 		}
 	});
 });
@@ -174,7 +174,12 @@ onBeforeUnmount(() => {
 		</Modal>
 
 		<Modal :show="Game.isVictory.value" @close="restartGame" max-width="md">
-			<PrimaryButton @click="restartGame"> Restart game </PrimaryButton>
+			<div class="flex flex-col items-center justify-center gap-4">
+				<h2 class="text-2xl text-white">Congratulations</h2>
+				<span class="text-white">You found all lost cargo!</span>
+
+				<PrimaryButton @click="restartGame"> Restart game </PrimaryButton>
+			</div>
 		</Modal>
 
 		<audio src="/audio/ship-ocean-waves-wind-wood-creaks.mp3" ref="backgroundMusic" muted autoplay loop />
