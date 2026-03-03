@@ -1,21 +1,33 @@
-# Boat game
+# Boat Game
 
-## Node Version
-Make sure you're using the correct Node.js version for the project by running the following in the root of the repository:
+Drive a boat across the ocean and recover lost boxes drifting on the water.
+
+## Requirements
+
+Ensure you are using the correct Node.js version by running the following command in the root of the repository:
+
 ```sh
-   nvm use
-   ```
+nvm use
+```
 
 ## Development
-1. Install dependencies:
-   ```sh
-   yarn
-   ```
-2a. Start the development server with HMR:
-   ```sh
-   yarn dev
-   ```
-2b. Build the project for production:
-   ```sh
-   yarn build
-   ```
+
+Install dependencies:
+
+```sh
+yarn
+```
+
+Start the development server with HMR:
+
+```sh
+yarn dev
+```
+
+## Production
+
+Build the project for production:
+
+```sh
+yarn build
+```
