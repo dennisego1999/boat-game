@@ -1,7 +1,21 @@
-# Vue 3 + Vite
+# Boat game
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Node Version
+Make sure you're using the correct Node.js version for the project by running the following in the root of the repository:
+```sh
+   nvm use
+   ```
 
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## Development
+1. Install dependencies:
+   ```sh
+   yarn
+   ```
+2a. Start the development server with HMR:
+   ```sh
+   yarn dev
+   ```
+2b. Build the project for production:
+   ```sh
+   yarn build
+   ```
